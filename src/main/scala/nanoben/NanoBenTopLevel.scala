@@ -3,11 +3,10 @@ package nanoben
 import spinal.core._
 
 class NanoBenTopLevel extends Component {
-  val io = new Bundle {
-    val a = in Bool()
-    val b = in Bool()
-    val c = out Bool()
-  }
+  val io: NanoBenIo = NanoBenIo()
 
-  io.c := io.a & io.b
+  // Dummy reg because otherwise there's no clk key
+  val unused: Any = Reg(Bool()) init false
+
+  io.output := io.input_0 & io.input_1
 }
