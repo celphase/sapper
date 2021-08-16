@@ -23,7 +23,7 @@ object NanoBenTopLevelTests {
         dut.io.input_1 #= value_1
         dut.clockDomain.waitRisingEdge()
 
-        assert(dut.io.output.toInt == (value_0 + value_1) % 256, s"$value_0 + $value_1")
+        assert(dut.io.output.toInt == (value_0 + value_1), s"$value_0 + $value_1")
       }
     }
   }
