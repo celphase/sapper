@@ -30,19 +30,8 @@ case class NanoBenTopLevel() extends Component {
     0 -> io.sw(7 downto 0),
     1 -> register0.io.outValue,
     2 -> register1.io.outValue,
-    3 -> IntToBits(0)
+    3 -> (register0.io.outValue.asUInt + register1.io.outValue.asUInt).asBits
   )
 
   io.led := bus
-}
-
-case class Register() extends Component {
-  val io = new Bundle {
-    val inBus = in Bits (8 bits)
-    val inWriteEnable = in Bool()
-    val outValue = out Bits (8 bits)
-  }
-
-  val data = RegNextWhen(io.inBus, io.inWriteEnable)
-  io.outValue := data
 }
