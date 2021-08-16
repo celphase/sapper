@@ -17,19 +17,19 @@ case class NanoBenTopLevel() extends Component {
   val bus = Bits(8 bits)
 
   // General purpose registers
-  val register_a = Register()
-  register_a.io.inBus := bus
-  register_a.io.inWriteEnable := io.sw(11)
-  val register_b = Register()
-  register_b.io.inBus := bus
-  register_b.io.inWriteEnable := io.sw(10)
+  val register_0 = Register()
+  register_0.io.inBus := bus
+  register_0.io.inWriteEnable := io.sw(11)
+  val register_1 = Register()
+  register_1.io.inBus := bus
+  register_1.io.inWriteEnable := io.sw(10)
 
   val busSelect = Bits(2 bits)
   busSelect := io.sw(9 downto 8)
   bus := busSelect.mux(
     0 -> io.sw(7 downto 0),
-    1 -> register_a.io.outValue,
-    2 -> register_b.io.outValue,
+    1 -> register_0.io.outValue,
+    2 -> register_1.io.outValue,
     3 -> IntToBits(0)
   )
 
