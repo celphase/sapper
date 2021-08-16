@@ -21,31 +21,33 @@ object NanoBenTopLevelTests {
         val value_1 = r.nextInt(256)
 
         // Store value in register 0
-        var switches = value_0
-        switches |= 1 << 11
-        dut.io.sw #= switches
+        dut.io.sw #= switches(value_0, write_0 = true)
         dut.clockDomain.waitRisingEdge()
 
         // Store value in register 1
-        switches = value_1
-        switches |= 1 << 10
-        dut.io.sw #= switches
+        dut.io.sw #= switches(value_1, write_1 = true)
         dut.clockDomain.waitRisingEdge()
 
         // Retrieve and check value in register 0
-        switches = 1 << 8
-        dut.io.sw #= switches
+        dut.io.sw #= switches(select = 1)
         dut.clockDomain.waitRisingEdge()
         var result = dut.io.led.toInt
         assert(result == value_0, s"Got $result expected $value_0")
 
         // Retrieve and check value in register 1
-        switches = 2 << 8
-        dut.io.sw #= switches
+        dut.io.sw #= switches(select = 2)
         dut.clockDomain.waitRisingEdge()
         result = dut.io.led.toInt
         assert(result == value_1, s"Got $result expected $value_1")
       }
     }
+  }
+
+  def switches(bus: Int = 0, select: Int = 0, write_0: Boolean = false, write_1: Boolean = false): Int = {
+    var switches = bus
+    switches |= select << 8
+    switches |= write_0.toInt << 11
+    switches |= write_1.toInt << 10
+    switches
   }
 }
