@@ -20,12 +20,8 @@ case class ALU() extends Component {
 
   // Addition with carry filled into the lowest bit
   // This has been optimized for the best LUT usage
-  val addInput0 = Bits(9 bits)
-  val addInput1 = Bits(9 bits)
-  addInput0(8 downto 1) := io.inRegister0
-  addInput0(0) := io.inMode
-  addInput1(8 downto 1) := register1
-  addInput1(0) := io.inMode
+  val addInput0 = B(9 bits, (8 downto 1) -> io.inRegister0, 0 -> io.inMode)
+  val addInput1 = B(9 bits, (8 downto 1) -> register1, 0 -> io.inMode)
 
   val addOutput = UInt(10 bits)
   addOutput := addInput0.asUInt +^ addInput1.asUInt
