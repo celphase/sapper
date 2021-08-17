@@ -35,13 +35,13 @@ object NanoBenTopLevelTests {
       // Retrieve and check value in register 0
       dut.io.sw #= switches(select = 1)
       dut.clockDomain.waitRisingEdge()
-      var result = dut.io.led.toInt
+      var result = dut.io.led.toInt & 0xFF
       assert(result == value0, s"Got $result expected $value0")
 
       // Retrieve and check value in register 1
       dut.io.sw #= switches(select = 2)
       dut.clockDomain.waitRisingEdge()
-      result = dut.io.led.toInt
+      result = dut.io.led.toInt & 0xFF
       assert(result == value1, s"Got $result expected $value1")
     }
   }
@@ -53,7 +53,7 @@ object NanoBenTopLevelTests {
     for (_ <- 1 to 10) {
       val value0 = r.nextInt(256)
       val value1 = r.nextInt(256)
-      val expected = (value0 + value1) % 256
+      val expected = value0 + value1 // % 256 (currently carry's put in the top bit)
 
       // Store value in register 0
       dut.io.sw #= switches(value0, write0 = true)
@@ -67,7 +67,7 @@ object NanoBenTopLevelTests {
       dut.io.sw #= switches(select = 3)
       dut.clockDomain.waitRisingEdge()
       val result = dut.io.led.toInt
-      assert(result == expected, s"Got $result expected $expected")
+      assert(result == expected, s"Got $result expected $value0 + $value1 = $expected")
     }
   }
 

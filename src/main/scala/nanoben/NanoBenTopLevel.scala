@@ -7,36 +7,34 @@ import scala.language.postfixOps
 case class NanoBenTopLevel() extends Component {
   val io = new Bundle {
     val sw = in Bits (13 bits)
-    val led = out Bits (8 bits)
+    val led = out Bits (9 bits)
   }
 
   // These correspond directly to the constraints file
   io.sw.setName("sw")
   io.led.setName("led")
 
-  val bus = Bits(8 bits)
+  val wBus = WBus()
+  wBus.io.inSelect := io.sw(10 downto 8)
+  wBus.io.inSwitches := io.sw(7 downto 0)
 
-  // General purpose registers
+  // General purpose & math registers
   val register0 = Register()
-  register0.io.inBus := bus
+  register0.io.inBus := wBus.io.outValue
   register0.io.inWriteEnable := io.sw(11)
+  wBus.io.inRegister0 := register0.io.outValue
+
   val register1 = Register()
-  register1.io.inBus := bus
+  register1.io.inBus := wBus.io.outValue
   register1.io.inWriteEnable := io.sw(12)
+  wBus.io.inRegister1 := register1.io.outValue
 
-  // Bus selection, FPGAs don't always have bus transceivers, so we use a mux instead
-  val busSelect = Bits(3 bits)
-  busSelect := io.sw(10 downto 8)
-  bus := busSelect.mux(
-    0 -> io.sw(7 downto 0),
-    1 -> register0.io.outValue,
-    2 -> register1.io.outValue,
-    3 -> (register0.io.outValue.asUInt + register1.io.outValue.asUInt).asBits,
-    4 -> IntToBits(0),
-    5 -> IntToBits(0),
-    6 -> IntToBits(0),
-    7 -> IntToBits(0)
-  )
+  // ALU
+  val alu = ALU()
+  alu.io.inRegister0 := register0.io.outValue
+  alu.io.inRegister1 := register1.io.outValue
+  wBus.io.inAlu := alu.io.outValue
 
-  io.led := bus
+  io.led(7 downto 0) := wBus.io.outValue
+  io.led(8) := alu.io.outCarry
 }
