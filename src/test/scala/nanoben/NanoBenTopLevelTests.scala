@@ -75,7 +75,7 @@ object NanoBenTopLevelTests {
     var switches = bus
     switches |= select << 8
     switches |= write0.toInt << 11
-    switches |= write1.toInt << 10
+    switches |= write1.toInt << 12
     switches
   }
 }
