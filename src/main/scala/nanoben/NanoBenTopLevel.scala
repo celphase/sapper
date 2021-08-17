@@ -6,7 +6,7 @@ import scala.language.postfixOps
 
 case class NanoBenTopLevel() extends Component {
   val io = new Bundle {
-    val sw = in Bits (13 bits)
+    val sw = in Bits (14 bits)
     val led = out Bits (9 bits)
   }
 
@@ -33,6 +33,7 @@ case class NanoBenTopLevel() extends Component {
   val alu = ALU()
   alu.io.inRegister0 := register0.io.outValue
   alu.io.inRegister1 := register1.io.outValue
+  alu.io.inMode := io.sw(13)
   wBus.io.inAlu := alu.io.outValue
 
   io.led(7 downto 0) := wBus.io.outValue
