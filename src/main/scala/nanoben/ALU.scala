@@ -18,10 +18,19 @@ case class ALU() extends Component {
   val xorMask = B(8 bits, default -> io.inMode)
   val register1 = io.inRegister1 ^ xorMask
 
-  // Addition
-  val aluOutput = UInt(9 bits)
-  aluOutput := (io.inRegister0.asUInt +^ register1.asUInt) + io.inMode.asUInt
+  // Addition with carry filled into the lowest bit
+  // This has been optimized for the best LUT usage
+  val addInput0 = Bits(9 bits)
+  val addInput1 = Bits(9 bits)
+  addInput0(8 downto 1) := io.inRegister0
+  addInput0(0) := io.inMode
+  addInput1(8 downto 1) := register1
+  addInput1(0) := io.inMode
 
-  io.outValue := aluOutput(7 downto 0).asBits
-  io.outCarry := aluOutput(8)
+  val addOutput = UInt(10 bits)
+  addOutput := addInput0.asUInt +^ addInput1.asUInt
+
+  // Unpack the output
+  io.outValue := addOutput(8 downto 1).asBits
+  io.outCarry := addOutput(9)
 }
