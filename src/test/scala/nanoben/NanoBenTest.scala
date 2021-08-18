@@ -1,23 +1,24 @@
 package nanoben
 
+import org.scalatest.funsuite.AnyFunSuite
 import spinal.core._
 import spinal.core.sim._
 
 import scala.language.postfixOps
 import scala.util.Random
 
-object NanoBenTopLevelTests {
-  def main(args: Array[String]): Unit = {
+class NanoBenTest extends AnyFunSuite {
+  test("NanoBen") {
     val compiled = SimConfig
       .withWave
-      .compile(NanoBenTopLevel(true))
+      .compile(NanoBen(true))
 
     compiled.doSim { dut => testRegisters(dut) }
     compiled.doSim { dut => testAddition(dut) }
     compiled.doSim { dut => testUnsignedSubtraction(dut) }
   }
 
-  def testRegisters(dut: NanoBenTopLevel): Unit = {
+  def testRegisters(dut: NanoBen): Unit = {
     dut.clockDomain.forkStimulus(period = 10)
     val r = new Random(1234)
 
@@ -47,7 +48,7 @@ object NanoBenTopLevelTests {
     }
   }
 
-  def testAddition(dut: NanoBenTopLevel): Unit = {
+  def testAddition(dut: NanoBen): Unit = {
     dut.clockDomain.forkStimulus(period = 10)
     val r = new Random(1234)
 
@@ -72,7 +73,7 @@ object NanoBenTopLevelTests {
     }
   }
 
-  def testUnsignedSubtraction(dut: NanoBenTopLevel): Unit = {
+  def testUnsignedSubtraction(dut: NanoBen): Unit = {
     dut.clockDomain.forkStimulus(period = 10)
     val r = new Random(1234)
 

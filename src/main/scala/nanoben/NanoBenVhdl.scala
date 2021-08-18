@@ -2,9 +2,9 @@ package nanoben
 
 import spinal.core._
 
-object NanoBenTopLevelVhdl {
+object NanoBenVhdl {
   def main(args: Array[String]): Unit = {
     SpinalConfig(device = Device.XILINX)
-      .generateVhdl(NanoBenTopLevel(false))
+      .generateVhdl(NanoBen(false))
   }
 }

@@ -4,7 +4,7 @@ import spinal.core._
 
 import scala.language.postfixOps
 
-case class NanoBenTopLevel(simulation: Boolean) extends Component {
+case class NanoBen(simulation: Boolean) extends Component {
   val io = new Bundle {
     val sw = in Bits (16 bits)
     val led = out Bits (9 bits)
@@ -46,6 +46,12 @@ case class NanoBenTopLevel(simulation: Boolean) extends Component {
   memory.io.inValue := wordBus.io.outValue
   memory.io.inWriteEnable := io.sw(15)
   wordBus.io.inMemory := memory.io.outValue
+
+  // Program counter
+  val programCounter = Reg(UInt(8 bits)) init 0
+
+  // Increment the counter every clock
+  programCounter := programCounter + 1
 
   // Output to device IO
   io.led(7 downto 0) := wordBus.io.outValue
