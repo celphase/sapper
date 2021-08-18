@@ -11,7 +11,8 @@ class NanoBenTest extends AnyFunSuite {
   test("NanoBen") {
     val compiled = SimConfig
       .withWave
-      .compile(NanoBen(true))
+      .addSimulatorFlag("-Wno-MULTIDRIVEN")
+      .compile(NanoBen())
 
     compiled.doSim { dut => testRegisters(dut) }
     compiled.doSim { dut => testAddition(dut) }

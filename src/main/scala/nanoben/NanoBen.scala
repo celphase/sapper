@@ -4,15 +4,12 @@ import spinal.core._
 
 import scala.language.postfixOps
 
-case class NanoBen(simulation: Boolean) extends Component {
+case class NanoBen() extends Component {
   val io = new Bundle {
     val sw = in Bits (16 bits)
+    val JB = in Bits (8 bits)
     val led = out Bits (9 bits)
-  }
-
-  // These correspond directly to the constraints file
-  io.sw.setName("sw")
-  io.led.setName("led")
+  }.setName("")
 
   val wordBus = WordBus()
   wordBus.io.inSelect := io.sw(10 downto 8)
@@ -41,10 +38,11 @@ case class NanoBen(simulation: Boolean) extends Component {
   addressRegister.io.inBus := wordBus.io.outValue
   addressRegister.io.inWriteEnable := io.sw(14)
 
-  val memory = Memory(simulation)
+  val memory = Memory()
   memory.io.inAddress := addressRegister.io.outValue.asUInt
   memory.io.inValue := wordBus.io.outValue
   memory.io.inWriteEnable := io.sw(15)
+  memory.io.inPeripheral := io.JB
   wordBus.io.inMemory := memory.io.outValue
 
   // Program counter
