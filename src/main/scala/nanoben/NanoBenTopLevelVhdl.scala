@@ -4,6 +4,7 @@ import spinal.core._
 
 object NanoBenTopLevelVhdl {
   def main(args: Array[String]): Unit = {
-    SpinalVhdl(new NanoBenTopLevel)
+    SpinalConfig(device = Device.XILINX)
+      .generateVhdl(NanoBenTopLevel(false))
   }
 }

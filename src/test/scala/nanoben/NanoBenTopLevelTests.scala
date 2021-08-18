@@ -10,7 +10,7 @@ object NanoBenTopLevelTests {
   def main(args: Array[String]): Unit = {
     val compiled = SimConfig
       .withWave
-      .compile(new NanoBenTopLevel)
+      .compile(NanoBenTopLevel(true))
 
     compiled.doSim { dut => testRegisters(dut) }
     compiled.doSim { dut => testAddition(dut) }

@@ -4,9 +4,9 @@ import spinal.core._
 
 import scala.language.postfixOps
 
-case class NanoBenTopLevel() extends Component {
+case class NanoBenTopLevel(simulation: Boolean) extends Component {
   val io = new Bundle {
-    val sw = in Bits (14 bits)
+    val sw = in Bits (16 bits)
     val led = out Bits (9 bits)
   }
 
@@ -35,6 +35,25 @@ case class NanoBenTopLevel() extends Component {
   alu.io.inRegister1 := register1.io.outValue
   alu.io.inMode := io.sw(13)
   wBus.io.inAlu := alu.io.outValue
+
+  // RAM
+  val memoryAddressRegister = Register()
+  memoryAddressRegister.io.inBus := wBus.io.outValue
+  memoryAddressRegister.io.inWriteEnable := io.sw(14)
+
+  val memory = Mem(Bits(8 bits), wordCount = 256)
+  if (!simulation) {
+    memory.setTechnology(ramBlock)
+    memory.generateAsBlackBox()
+  }
+
+  val writeEnable = io.sw(15)
+  wBus.io.inMemory := memory.readWriteSync(
+    address = memoryAddressRegister.io.outValue.asUInt,
+    data = wBus.io.outValue,
+    enable = True,
+    write = writeEnable
+  )
 
   io.led(7 downto 0) := wBus.io.outValue
   io.led(8) := alu.io.outCarry

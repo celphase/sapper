@@ -11,6 +11,7 @@ case class WBus() extends Component {
     val inRegister0 = in Bits (8 bits)
     val inRegister1 = in Bits (8 bits)
     val inAlu = in Bits (8 bits)
+    val inMemory = in Bits (8 bits)
     val outValue = out Bits (8 bits)
   }
 
@@ -20,7 +21,7 @@ case class WBus() extends Component {
     1 -> io.inRegister0,
     2 -> io.inRegister1,
     3 -> io.inAlu,
-    4 -> IntToBits(0),
+    4 -> io.inMemory,
     5 -> IntToBits(0),
     6 -> IntToBits(0),
     7 -> IntToBits(0)
