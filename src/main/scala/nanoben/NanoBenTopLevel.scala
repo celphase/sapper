@@ -36,25 +36,18 @@ case class NanoBenTopLevel(simulation: Boolean) extends Component {
   alu.io.inMode := io.sw(13)
   wBus.io.inAlu := alu.io.outValue
 
-  // RAM
-  val memoryAddressRegister = Register()
-  memoryAddressRegister.io.inBus := wBus.io.outValue
-  memoryAddressRegister.io.inWriteEnable := io.sw(14)
+  // Memory
+  val addressRegister = Register()
+  addressRegister.io.inBus := wBus.io.outValue
+  addressRegister.io.inWriteEnable := io.sw(14)
 
-  val memory = Mem(Bits(8 bits), wordCount = 256)
-  if (!simulation) {
-    memory.setTechnology(ramBlock)
-    memory.generateAsBlackBox()
-  }
+  val memory = Memory(simulation)
+  memory.io.inAddress := addressRegister.io.outValue.asUInt
+  memory.io.inValue := wBus.io.outValue
+  memory.io.inWriteEnable := io.sw(15)
+  wBus.io.inMemory := memory.io.outValue
 
-  val writeEnable = io.sw(15)
-  wBus.io.inMemory := memory.readWriteSync(
-    address = memoryAddressRegister.io.outValue.asUInt,
-    data = wBus.io.outValue,
-    enable = True,
-    write = writeEnable
-  )
-
+  // Output to device IO
   io.led(7 downto 0) := wBus.io.outValue
   io.led(8) := alu.io.outCarry
 }

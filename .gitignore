@@ -31,7 +31,7 @@ bin/
 .cache-main
 
 #User
-/*.vhd
+/NanoBenTopLevel.vhd
 /*.v
 *.cf
 *.json
