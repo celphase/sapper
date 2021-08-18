@@ -13,10 +13,6 @@ case class Memory(simulation: Boolean) extends Component {
   }
 
   val memory = Mem(Bits(8 bits), wordCount = 256)
-  if (!simulation) {
-    memory.setTechnology(ramBlock)
-    memory.generateAsBlackBox()
-  }
 
   io.outValue := memory.readWriteSync(
     address = io.inAddress,
