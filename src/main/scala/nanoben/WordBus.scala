@@ -4,7 +4,7 @@ import spinal.core._
 
 import scala.language.postfixOps
 
-case class WBus() extends Component {
+case class WordBus() extends Component {
   val io = new Bundle {
     val inSelect = in Bits (3 bits)
     val inSwitches = in Bits (8 bits)
