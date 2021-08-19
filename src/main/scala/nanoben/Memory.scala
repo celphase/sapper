@@ -4,12 +4,14 @@ import spinal.core._
 
 import scala.language.postfixOps
 
-case class Memory() extends Component {
+case class Memory(simulation: Boolean) extends Component {
   val io = new Bundle {
     val inAddress = in UInt (8 bits)
     val inValue = in Bits (8 bits)
     val inWriteEnable = in Bool()
-    val inPeripheral = in Bits (8 bits)
+    val inPeripheralClock = in Bool()
+    val inPeripheralSelect = in Bits (3 bits)
+    val inPeripheralNibble = in Bits (4 bits)
     val outValue = out Bits (8 bits)
   }
 
@@ -25,25 +27,26 @@ case class Memory() extends Component {
   )
 
   // Peripheral memory access
-  val peripheralClockDomain = ClockDomain.internal("peripheralClock")
-  peripheralClockDomain.clock := io.inPeripheral(7)
-  peripheralClockDomain.reset := False
+  val peripheralClockDomain = if (!simulation) {
+    ClockDomain(clock = io.inPeripheralClock)
+  } else {
+    // Workaround for simulation seemingly not working with clock domains
+    ClockDomain.external("simPeripheralClock")
+  }
 
   val peripheralClockArea = new ClockingArea(peripheralClockDomain) {
-    val select = io.inPeripheral(2 downto 0).asUInt
-    val ioNibble = io.inPeripheral(6 downto 3)
-
-    val wordLow = RegNextWhen(ioNibble, select === 0)
-    val wordHigh = RegNextWhen(ioNibble, select === 1)
-    val addressLow = RegNextWhen(ioNibble, select === 2)
-    val addressHigh = RegNextWhen(ioNibble, select === 3)
+    val wordLow = RegNextWhen(io.inPeripheralNibble, io.inPeripheralSelect === 1)
+    val wordHigh = RegNextWhen(io.inPeripheralNibble, io.inPeripheralSelect === 2)
+    val addressLow = RegNextWhen(io.inPeripheralNibble, io.inPeripheralSelect === 3)
+    val addressHigh = RegNextWhen(io.inPeripheralNibble, io.inPeripheralSelect === 4)
+    val writeMemory = io.inPeripheralSelect === 5
 
     // TODO: Tri-state data bus for output
     memory.readWriteSync(
       address = B(addressHigh, addressLow).asUInt,
       data = B(wordHigh, wordLow),
       enable = True,
-      write = select === 4,
+      write = writeMemory,
       clockCrossing = true
     )
   }

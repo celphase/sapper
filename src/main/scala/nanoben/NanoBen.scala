@@ -4,7 +4,7 @@ import spinal.core._
 
 import scala.language.postfixOps
 
-case class NanoBen() extends Component {
+case class NanoBen(simulation: Boolean) extends Component {
   val io = new Bundle {
     val sw = in Bits (16 bits)
     val JB = in Bits (8 bits)
@@ -38,11 +38,17 @@ case class NanoBen() extends Component {
   addressRegister.io.inBus := wordBus.io.outValue
   addressRegister.io.inWriteEnable := io.sw(14)
 
-  val memory = Memory()
-  memory.io.inAddress := addressRegister.io.outValue.asUInt
+  // If the register is currently being written to, shortcut the bus immediately to the memory address
+  // This is necessary because this lets the memory immediately fetch the new data without waiting for the register
+  val addressBus = io.sw(14) ? wordBus.io.outValue | addressRegister.io.outValue
+
+  val memory = Memory(simulation)
+  memory.io.inAddress := addressBus.asUInt
   memory.io.inValue := wordBus.io.outValue
   memory.io.inWriteEnable := io.sw(15)
-  memory.io.inPeripheral := io.JB
+  memory.io.inPeripheralClock := io.JB(7)
+  memory.io.inPeripheralSelect := io.JB(2 downto 0)
+  memory.io.inPeripheralNibble := io.JB(6 downto 3)
   wordBus.io.inMemory := memory.io.outValue
 
   // Program counter
