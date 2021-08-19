@@ -4,7 +4,7 @@ import spinal.core._
 
 import scala.language.postfixOps
 
-case class Memory(peripheralClockDomain: ClockDomain) extends Component {
+case class Memory() extends Component {
   val io = new Bundle {
     val inAddress = in UInt (8 bits)
     val inValue = in Bits (8 bits)
@@ -26,13 +26,11 @@ case class Memory(peripheralClockDomain: ClockDomain) extends Component {
     clockCrossing = true
   )
 
-  val peripheralClockArea = new ClockingArea(peripheralClockDomain) {
-    memory.readWriteSync(
-      address = io.inPeripheralAddress,
-      data = io.inPeripheralData,
-      enable = True,
-      write = io.inPeripheralWriteEnable,
-      clockCrossing = true
-    )
-  }
+  memory.readWriteSync(
+    address = io.inPeripheralAddress,
+    data = io.inPeripheralData,
+    enable = True,
+    write = io.inPeripheralWriteEnable,
+    clockCrossing = true
+  )
 }

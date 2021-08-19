@@ -16,11 +16,12 @@ class NanoBenTest extends AnyFunSuite {
   test("Peripheral Memory Write") {
     compiled.doSim { dut =>
       dut.clockDomain.forkStimulus(period = 10)
-      dut.memory.peripheralClockDomain.forkStimulus(period = 100)
       val r = new Random(1234)
 
       // Just in case
       dut.io.sw #= 0
+      dut.io.inReq #= false
+      dut.clockDomain.waitSampling()
 
       for (_ <- 1 to 10) {
         // Fill memory with the values we want to add
@@ -136,27 +137,43 @@ class NanoBenTest extends AnyFunSuite {
 
   def writeToAddress(dut: NanoBen, value: Int, address: Int): Unit = {
     println(s"Writing $value to 0x${address.toHexString}")
-
-    // Write word
-    dut.io.JB #= peripheral(nibble = nibl(value), select = 1)
-    dut.memory.peripheralClockDomain.waitSampling()
-    dut.io.JB #= peripheral(nibble = nibh(value), select = 2)
-    dut.memory.peripheralClockDomain.waitSampling()
+    waitReset(dut)
 
     // Write memory address
-    dut.io.JB #= peripheral(nibble = nibl(address), select = 3)
-    dut.memory.peripheralClockDomain.waitSampling()
-    dut.io.JB #= peripheral(nibble = nibh(address), select = 4)
-    dut.memory.peripheralClockDomain.waitSampling()
+    dut.io.inNibble #= nibl(address)
+    waitReq(dut)
+    dut.io.inNibble #= nibh(address)
+    waitReq(dut)
 
-    // Submit write
-    dut.io.JB #= peripheral(select = 5)
-    dut.memory.peripheralClockDomain.waitSampling()
-    dut.io.JB #= 0
+    // Write word
+    dut.io.inNibble #= nibl(value)
+    waitReq(dut)
+    dut.io.inNibble #= nibh(value)
+    waitReq(dut)
   }
 
-  def peripheral(nibble: Int = 0, select: Int): Int = {
-    nibble << 3 | select
+  def waitReset(dut: NanoBen): Unit = {
+    dut.io.inPReset #= true
+    do {
+      dut.clockDomain.waitSampling()
+    } while (!dut.io.outAck.toBoolean)
+
+    dut.io.inPReset #= false
+    do {
+      dut.clockDomain.waitSampling()
+    } while (dut.io.outAck.toBoolean)
+  }
+
+  def waitReq(dut: NanoBen): Unit = {
+    dut.io.inReq #= true
+    do {
+      dut.clockDomain.waitSampling()
+    } while (!dut.io.outAck.toBoolean)
+
+    dut.io.inReq #= false
+    do {
+      dut.clockDomain.waitSampling()
+    } while (dut.io.outAck.toBoolean)
   }
 
   def nibl(value: Int): Int = {
