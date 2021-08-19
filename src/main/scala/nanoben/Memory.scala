@@ -4,14 +4,14 @@ import spinal.core._
 
 import scala.language.postfixOps
 
-case class Memory(simulation: Boolean) extends Component {
+case class Memory(peripheralClockDomain: ClockDomain) extends Component {
   val io = new Bundle {
     val inAddress = in UInt (8 bits)
     val inValue = in Bits (8 bits)
     val inWriteEnable = in Bool()
-    val inPeripheralClock = in Bool()
-    val inPeripheralSelect = in Bits (3 bits)
-    val inPeripheralNibble = in Bits (4 bits)
+    val inPeripheralAddress = in UInt (8 bits)
+    val inPeripheralData = in Bits (8 bits)
+    val inPeripheralWriteEnable = in Bool()
     val outValue = out Bits (8 bits)
   }
 
@@ -26,27 +26,12 @@ case class Memory(simulation: Boolean) extends Component {
     clockCrossing = true
   )
 
-  // Peripheral memory access
-  val peripheralClockDomain = if (!simulation) {
-    ClockDomain(clock = io.inPeripheralClock)
-  } else {
-    // Workaround for simulation seemingly not working with clock domains
-    ClockDomain.external("simPeripheralClock")
-  }
-
   val peripheralClockArea = new ClockingArea(peripheralClockDomain) {
-    val wordLow = RegNextWhen(io.inPeripheralNibble, io.inPeripheralSelect === 1)
-    val wordHigh = RegNextWhen(io.inPeripheralNibble, io.inPeripheralSelect === 2)
-    val addressLow = RegNextWhen(io.inPeripheralNibble, io.inPeripheralSelect === 3)
-    val addressHigh = RegNextWhen(io.inPeripheralNibble, io.inPeripheralSelect === 4)
-    val writeMemory = io.inPeripheralSelect === 5
-
-    // TODO: Tri-state data bus for output
     memory.readWriteSync(
-      address = B(addressHigh, addressLow).asUInt,
-      data = B(wordHigh, wordLow),
+      address = io.inPeripheralAddress,
+      data = io.inPeripheralData,
       enable = True,
-      write = writeMemory,
+      write = io.inPeripheralWriteEnable,
       clockCrossing = true
     )
   }
