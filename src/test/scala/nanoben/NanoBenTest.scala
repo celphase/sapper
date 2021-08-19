@@ -15,13 +15,8 @@ class NanoBenTest extends AnyFunSuite {
 
   test("Peripheral Memory Write") {
     compiled.doSim { dut =>
-      dut.clockDomain.forkStimulus(period = 10)
+      waitInitialize(dut)
       val r = new Random(1234)
-
-      // Just in case
-      dut.io.sw #= 0
-      dut.io.inReq #= false
-      dut.clockDomain.waitSampling()
 
       for (_ <- 1 to 10) {
         // Fill memory with the values we want to add
@@ -47,92 +42,108 @@ class NanoBenTest extends AnyFunSuite {
     }
   }
 
-  test("NanoBen") {
-    compiled.doSim { dut => testRegisters(dut) }
-    compiled.doSim { dut => testAddition(dut) }
-    compiled.doSim { dut => testUnsignedSubtraction(dut) }
-  }
+  test("Registers") {
+    compiled.doSim { dut =>
+      waitInitialize(dut)
+      val r = new Random(1234)
 
-  def testRegisters(dut: NanoBen): Unit = {
-    dut.clockDomain.forkStimulus(period = 10)
-    val r = new Random(1234)
+      for (_ <- 1 to 10) {
+        val value0 = r.nextInt(256)
+        val value1 = r.nextInt(256)
 
-    for (_ <- 1 to 10) {
-      val value0 = r.nextInt(256)
-      val value1 = r.nextInt(256)
+        // Store value in register 0
+        dut.io.sw #= switches(value0, write0 = true)
+        dut.clockDomain.waitRisingEdge()
 
-      // Store value in register 0
-      dut.io.sw #= switches(value0, write0 = true)
-      dut.clockDomain.waitRisingEdge()
+        // Store value in register 1
+        dut.io.sw #= switches(value1, write1 = true)
+        dut.clockDomain.waitRisingEdge()
 
-      // Store value in register 1
-      dut.io.sw #= switches(value1, write1 = true)
-      dut.clockDomain.waitRisingEdge()
+        // Retrieve and check value in register 0
+        dut.io.sw #= switches(select = 1)
+        dut.clockDomain.waitRisingEdge()
+        var result = dut.io.led.toInt & 0xFF
+        assert(result == value0, s"Got $result expected $value0")
 
-      // Retrieve and check value in register 0
-      dut.io.sw #= switches(select = 1)
-      dut.clockDomain.waitRisingEdge()
-      var result = dut.io.led.toInt & 0xFF
-      assert(result == value0, s"Got $result expected $value0")
-
-      // Retrieve and check value in register 1
-      dut.io.sw #= switches(select = 2)
-      dut.clockDomain.waitRisingEdge()
-      result = dut.io.led.toInt & 0xFF
-      assert(result == value1, s"Got $result expected $value1")
+        // Retrieve and check value in register 1
+        dut.io.sw #= switches(select = 2)
+        dut.clockDomain.waitRisingEdge()
+        result = dut.io.led.toInt & 0xFF
+        assert(result == value1, s"Got $result expected $value1")
+      }
     }
   }
 
-  def testAddition(dut: NanoBen): Unit = {
-    dut.clockDomain.forkStimulus(period = 10)
-    val r = new Random(1234)
+  test("Addition") {
+    compiled.doSim { dut =>
+      waitInitialize(dut)
+      val r = new Random(1234)
 
-    for (_ <- 1 to 10) {
-      val value0 = r.nextInt(256)
-      val value1 = r.nextInt(256)
-      val expected = value0 + value1 // % 256 (currently carry's put in the top bit)
+      for (_ <- 1 to 10) {
+        val value0 = r.nextInt(256)
+        val value1 = r.nextInt(256)
+        val expected = value0 + value1 // % 256 (currently carry's put in the top bit)
 
-      // Store value in register 0
-      dut.io.sw #= switches(value0, write0 = true)
-      dut.clockDomain.waitRisingEdge()
+        // Store value in register 0
+        dut.io.sw #= switches(value0, write0 = true)
+        dut.clockDomain.waitRisingEdge()
 
-      // Store value in register 1
-      dut.io.sw #= switches(value1, write1 = true)
-      dut.clockDomain.waitRisingEdge()
+        // Store value in register 1
+        dut.io.sw #= switches(value1, write1 = true)
+        dut.clockDomain.waitRisingEdge()
 
-      // Retrieve and check value in ALU
-      dut.io.sw #= switches(select = 3)
-      dut.clockDomain.waitRisingEdge()
-      val result = dut.io.led.toInt
-      assert(result == expected, s"Got $result expected $value0 + $value1 = $expected")
+        // Retrieve and check value in ALU
+        dut.io.sw #= switches(select = 3)
+        dut.clockDomain.waitRisingEdge()
+        val result = dut.io.led.toInt
+        assert(result == expected, s"Got $result expected $value0 + $value1 = $expected")
+      }
     }
   }
 
-  def testUnsignedSubtraction(dut: NanoBen): Unit = {
-    dut.clockDomain.forkStimulus(period = 10)
-    val r = new Random(1234)
+  test("Unsigned Subtract") {
+    compiled.doSim { dut =>
+      waitInitialize(dut)
+      val r = new Random(1234)
 
-    for (_ <- 1 to 10) {
-      val gen0 = r.nextInt(256)
-      val gen1 = r.nextInt(256)
-      val value0 = gen0.max(gen1)
-      val value1 = gen0.min(gen1)
-      val expected = value0 - value1
+      for (_ <- 1 to 10) {
+        val gen0 = r.nextInt(256)
+        val gen1 = r.nextInt(256)
+        val value0 = gen0.max(gen1)
+        val value1 = gen0.min(gen1)
+        val expected = value0 - value1
 
-      // Store value in register 0
-      dut.io.sw #= switches(value0, write0 = true)
-      dut.clockDomain.waitRisingEdge()
+        // Store value in register 0
+        dut.io.sw #= switches(value0, write0 = true)
+        dut.clockDomain.waitRisingEdge()
 
-      // Store value in register 1
-      dut.io.sw #= switches(value1, write1 = true)
-      dut.clockDomain.waitRisingEdge()
+        // Store value in register 1
+        dut.io.sw #= switches(value1, write1 = true)
+        dut.clockDomain.waitRisingEdge()
 
-      // Retrieve and check value in ALU
-      dut.io.sw #= switches(select = 3, subtract = true)
-      dut.clockDomain.waitRisingEdge()
-      val result = dut.io.led.toInt % 256 // Ignore the carry overflow
-      assert(result == expected, s"Got $result expected $value0 - $value1 = $expected")
+        // Retrieve and check value in ALU
+        dut.io.sw #= switches(select = 3, subtract = true)
+        dut.clockDomain.waitRisingEdge()
+        val result = dut.io.led.toInt % 256 // Ignore the carry overflow
+        assert(result == expected, s"Got $result expected $value0 - $value1 = $expected")
+      }
     }
+  }
+
+  def waitInitialize(dut: NanoBen): Unit = {
+    dut.clockDomain.forkStimulus(period = 10)
+
+    // Pull down everything
+    println("Pulling down and clearing ack")
+    dut.io.sw #= 0
+    dut.io.inReq #= false
+    dut.io.inPReset #= false
+    dut.io.inNibble #= 0
+
+    // Wait for any garbage data to be acked and cleared
+    dut.clockDomain.waitRisingEdge()
+    dut.clockDomain.waitRisingEdge()
+    waitAckClear(dut)
   }
 
   def writeToAddress(dut: NanoBen, value: Int, address: Int): Unit = {
@@ -152,6 +163,12 @@ class NanoBenTest extends AnyFunSuite {
     waitReq(dut)
   }
 
+  def waitAckClear(dut: NanoBen): Unit = {
+    do {
+      dut.clockDomain.waitSampling()
+    } while (dut.io.outAck.toBoolean)
+  }
+
   def waitReset(dut: NanoBen): Unit = {
     dut.io.inPReset #= true
     do {
@@ -159,9 +176,7 @@ class NanoBenTest extends AnyFunSuite {
     } while (!dut.io.outAck.toBoolean)
 
     dut.io.inPReset #= false
-    do {
-      dut.clockDomain.waitSampling()
-    } while (dut.io.outAck.toBoolean)
+    waitAckClear(dut)
   }
 
   def waitReq(dut: NanoBen): Unit = {
@@ -171,9 +186,7 @@ class NanoBenTest extends AnyFunSuite {
     } while (!dut.io.outAck.toBoolean)
 
     dut.io.inReq #= false
-    do {
-      dut.clockDomain.waitSampling()
-    } while (dut.io.outAck.toBoolean)
+    waitAckClear(dut)
   }
 
   def nibl(value: Int): Int = {

@@ -20,14 +20,14 @@ case class PeripheralInterface() extends Component {
   val addressHigh = Reg(Bits(4 bits))
   val wordLow = Reg(Bits(4 bits))
   val wordHigh = Reg(Bits(4 bits))
-  val ack = Reg(Bool(), False)
-  val state = Reg(UInt(2 bits)) init 0
+  val ack = Reg(Bool())
+  val state = Reg(UInt(2 bits))
 
   // Run signals through double flip-flop to avoid metastability
-  val reqStage = RegNext(io.inReq, False)
-  val req = RegNext(reqStage, False)
-  val resetStage = RegNext(io.inReset, False)
-  val reset = RegNext(resetStage, False)
+  val reqStage = RegNext(io.inReq)
+  val req = RegNext(reqStage)
+  val resetStage = RegNext(io.inReset)
+  val reset = RegNext(resetStage)
 
   // When reset is given, state goes back to 0
   when(reset.rise) {
