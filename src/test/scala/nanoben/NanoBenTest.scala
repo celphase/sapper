@@ -141,8 +141,6 @@ class NanoBenTest extends AnyFunSuite {
     dut.io.inNibble #= 0
 
     // Wait for any garbage data to be acked and cleared
-    dut.clockDomain.waitRisingEdge()
-    dut.clockDomain.waitRisingEdge()
     waitAckClear(dut)
   }
 
