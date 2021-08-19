@@ -1,4 +1,4 @@
-package nanoben
+package sapper
 
 import org.scalatest.funsuite.AnyFunSuite
 import spinal.core._
@@ -7,11 +7,11 @@ import spinal.core.sim._
 import scala.language.postfixOps
 import scala.util.Random
 
-class NanoBenTest extends AnyFunSuite {
+class SapperTest extends AnyFunSuite {
   val compiled = SimConfig
     .withWave
     .addSimulatorFlag("-Wno-MULTIDRIVEN")
-    .compile(NanoBen(true))
+    .compile(Sapper(true))
 
   test("Peripheral Memory Write") {
     compiled.doSim { dut =>
@@ -130,7 +130,7 @@ class NanoBenTest extends AnyFunSuite {
     }
   }
 
-  def waitInitialize(dut: NanoBen): Unit = {
+  def waitInitialize(dut: Sapper): Unit = {
     dut.clockDomain.forkStimulus(period = 10)
 
     // Pull down everything
@@ -144,7 +144,7 @@ class NanoBenTest extends AnyFunSuite {
     waitAckClear(dut)
   }
 
-  def writeToAddress(dut: NanoBen, value: Int, address: Int): Unit = {
+  def writeToAddress(dut: Sapper, value: Int, address: Int): Unit = {
     println(s"Writing $value to 0x${address.toHexString}")
     waitReset(dut)
 
@@ -161,13 +161,13 @@ class NanoBenTest extends AnyFunSuite {
     waitReq(dut)
   }
 
-  def waitAckClear(dut: NanoBen): Unit = {
+  def waitAckClear(dut: Sapper): Unit = {
     do {
       dut.clockDomain.waitSampling()
     } while (dut.io.outAck.toBoolean)
   }
 
-  def waitReset(dut: NanoBen): Unit = {
+  def waitReset(dut: Sapper): Unit = {
     dut.io.inPReset #= true
     do {
       dut.clockDomain.waitSampling()
@@ -177,7 +177,7 @@ class NanoBenTest extends AnyFunSuite {
     waitAckClear(dut)
   }
 
-  def waitReq(dut: NanoBen): Unit = {
+  def waitReq(dut: Sapper): Unit = {
     dut.io.inReq #= true
     do {
       dut.clockDomain.waitSampling()

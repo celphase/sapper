@@ -1,10 +1,10 @@
-package nanoben
+package sapper
 
 import spinal.core._
 
 import scala.language.postfixOps
 
-case class NanoBen(simulation: Boolean) extends Component {
+case class Sapper(simulation: Boolean) extends Component {
   val io = new Bundle {
     val sw = in Bits (16 bits)
     val inReq = in Bool()
