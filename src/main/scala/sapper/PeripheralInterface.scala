@@ -28,27 +28,28 @@ case class PeripheralInterface() extends Component {
   val resetStage = RegNext(io.inReset, False)
   val reset = RegNext(resetStage, False)
 
-  // This will get overwritten by states
-  io.outAck := False
-
   val fsm: StateMachine = new StateMachine {
     io.outMemoryWriteEnable := False
+    io.outAck := False
 
+    // Address in
     val readAddressLow = new State with EntryPoint
     val ackAddressLow = new State
     val readAddressHigh = new State
     val ackAddressHigh = new State
+
+    // Word in for memory write
     val readWordLow = new State
     val ackWordLow = new State
     val readWordHigh = new State
     val ackWordHigh = new State
 
+    // Reset ack
+    val ackReset = new State
+
     always {
       // Reset signal resets the state machine to start
-      when(reset) {
-        io.outAck := True
-        goto(readAddressLow)
-      }
+      when(reset)(goto(ackReset))
     }
 
     readAck(readAddressLow, ackAddressLow, addressLow, readAddressHigh)
@@ -68,12 +69,18 @@ case class PeripheralInterface() extends Component {
       ackState
         .onEntry(io.outAck := True)
         .whenIsActive {
-          when(!req) {
-            goto(nextState)
-          }
+          io.outAck := True
+          when(!req)(goto(nextState))
         }
         .onExit(io.outMemoryWriteEnable := True)
     }
+
+    ackReset
+      .onEntry(io.outAck := True)
+      .whenIsActive {
+        io.outAck := True
+        when(!reset)(goto(readAddressLow))
+      }
   }
 
   io.outMemoryAddress := B(addressHigh, addressLow).asUInt
