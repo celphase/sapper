@@ -51,72 +51,29 @@ case class PeripheralInterface() extends Component {
       }
     }
 
-    readAddressLow
-      .whenIsActive {
-        when(req) {
-          addressLow := io.inNibble
-          goto(ackAddressLow)
+    readAck(readAddressLow, ackAddressLow, addressLow, readAddressHigh)
+    readAck(readAddressHigh, ackAddressHigh, addressHigh, readWordLow)
+    readAck(readWordLow, ackWordLow, wordLow, readWordHigh)
+    readAck(readWordHigh, ackWordHigh, wordHigh, readAddressLow)
+
+    def readAck(readState: State, ackState: State, target: Bits, nextState: State): Unit = {
+      readState
+        .whenIsActive {
+          when(req) {
+            target := io.inNibble
+            goto(ackState)
+          }
         }
-      }
 
-    ackAddressLow
-      .onEntry(io.outAck := True)
-      .whenIsActive {
-        when(!req) {
-          goto(readAddressHigh)
+      ackState
+        .onEntry(io.outAck := True)
+        .whenIsActive {
+          when(!req) {
+            goto(nextState)
+          }
         }
-      }
-
-
-    readAddressHigh
-      .whenIsActive {
-        when(req) {
-          addressHigh := io.inNibble
-          goto(ackAddressHigh)
-        }
-      }
-
-    ackAddressHigh
-      .onEntry(io.outAck := True)
-      .whenIsActive {
-        when(!req) {
-          goto(readWordLow)
-        }
-      }
-
-
-    readWordLow
-      .whenIsActive {
-        when(req) {
-          wordLow := io.inNibble
-          goto(ackWordLow)
-        }
-      }
-
-    ackWordLow
-      .onEntry(io.outAck := True)
-      .whenIsActive {
-        when(!req) {
-          goto(readWordHigh)
-        }
-      }
-
-    readWordHigh
-      .whenIsActive {
-        when(req) {
-          wordHigh := io.inNibble
-          goto(ackWordHigh)
-        }
-      }
-
-    ackWordHigh
-      .onEntry(io.outAck := True)
-      .whenIsActive {
-        when(!req) {
-          goto(readAddressLow)
-        }
-      }
-      .onExit(io.outMemoryWriteEnable := True)
+        .onExit(io.outMemoryWriteEnable := True)
+    }
   }
 
   io.outMemoryAddress := B(addressHigh, addressLow).asUInt
