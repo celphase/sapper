@@ -151,17 +151,17 @@ set_property PACKAGE_PIN V13 [get_ports {led[8]}]
 
 ##Pmod Header JB
 ##Sch name = JB1
-set_property PACKAGE_PIN A14 [get_ports peripheralInterface_inReset]
-	set_property IOSTANDARD LVCMOS33 [get_ports peripheralInterface_inReset]
+set_property PACKAGE_PIN A14 [get_ports {peripheralInterface_inSignal[0]}]
+	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inSignal[0]}]
 ##Sch name = JB2
-set_property PACKAGE_PIN A16 [get_ports peripheralInterface_inWrite]
-	set_property IOSTANDARD LVCMOS33 [get_ports peripheralInterface_inWrite]
+set_property PACKAGE_PIN A16 [get_ports {peripheralInterface_inSignal[1]}]
+	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inSignal[1]}]
 ##Sch name = JB3
-set_property PACKAGE_PIN B15 [get_ports peripheralInterface_outAck]
-	set_property IOSTANDARD LVCMOS33 [get_ports peripheralInterface_outAck]
+#set_property PACKAGE_PIN B15 [get_ports {JB[2]}]
+	#set_property IOSTANDARD LVCMOS33 [get_ports {JB[2]}]
 ##Sch name = JB4
-#set_property PACKAGE_PIN B16 [get_ports {JB[3]}]
-	#set_property IOSTANDARD LVCMOS33 [get_ports {JB[3]}]
+set_property PACKAGE_PIN B16 [get_ports peripheralInterface_outAck]
+	set_property IOSTANDARD LVCMOS33 [get_ports peripheralInterface_outAck]
 ##Sch name = JB7
 set_property PACKAGE_PIN A15 [get_ports {peripheralInterface_inNibble[0]}]
 	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inNibble[0]}]

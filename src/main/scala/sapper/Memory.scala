@@ -1,36 +1,32 @@
 package sapper
 
 import spinal.core._
+import spinal.lib._
 
 import scala.language.postfixOps
 
 case class Memory() extends Component {
   val io = new Bundle {
-    val inAddress = in UInt (8 bits)
-    val inValue = in Bits (8 bits)
-    val inWriteEnable = in Bool()
-    val inPeripheralAddress = in UInt (8 bits)
-    val inPeripheralData = in Bits (8 bits)
-    val inPeripheralWriteEnable = in Bool()
-    val outValue = out Bits (8 bits)
+    val main = master(MemoryInterface())
+    val peripheral = master(MemoryInterface())
   }
 
   val memory = Mem(Bits(8 bits), wordCount = 256)
   memory.setTechnology(ramBlock)
 
-  io.outValue := memory.readWriteSync(
-    address = io.inAddress,
-    data = io.inValue,
+  io.main.readWord := memory.readWriteSync(
+    address = io.main.address,
+    data = io.main.writeWord,
     enable = True,
-    write = io.inWriteEnable,
+    write = io.main.writeEnable,
     clockCrossing = true
   )
 
-  memory.readWriteSync(
-    address = io.inPeripheralAddress,
-    data = io.inPeripheralData,
+  io.peripheral.readWord := memory.readWriteSync(
+    address = io.peripheral.address,
+    data = io.peripheral.writeWord,
     enable = True,
-    write = io.inPeripheralWriteEnable,
+    write = io.peripheral.writeEnable,
     clockCrossing = true
   )
 }

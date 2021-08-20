@@ -43,16 +43,15 @@ case class Sapper(simulation: Boolean) extends Component {
   val addressBus = io.sw(14) ? wordBus.io.outValue | addressRegister.io.outValue
 
   val memory = Memory()
-  memory.io.inAddress := addressBus.asUInt
-  memory.io.inValue := wordBus.io.outValue
-  memory.io.inWriteEnable := io.sw(15)
-  wordBus.io.inMemory := memory.io.outValue
+  memory.io.main.address := addressBus.asUInt
+  memory.io.main.writeWord := wordBus.io.outValue
+  memory.io.main.writeEnable := io.sw(15)
+  wordBus.io.inMemory := memory.io.main.readWord
 
+  // Peripheral controller
   val peripheralController = PeripheralController()
   peripheralController.io.interface <> io.peripheralInterface
-  memory.io.inPeripheralAddress := peripheralController.io.outMemoryAddress
-  memory.io.inPeripheralData := peripheralController.io.outMemoryData
-  memory.io.inPeripheralWriteEnable := peripheralController.io.outMemoryWriteEnable
+  peripheralController.io.memory <> memory.io.peripheral
 
   // Program counter
   val programCounter = Reg(UInt(8 bits)) init 0

@@ -136,8 +136,7 @@ class SapperTest extends AnyFunSuite {
     // Pull down everything
     println("Pulling down and clearing ack")
     dut.io.sw #= 0
-    dut.io.peripheralInterface.inWrite #= false
-    dut.io.peripheralInterface.inReset #= false
+    dut.io.peripheralInterface.inSignal #= 0
     dut.io.peripheralInterface.inNibble #= 0
 
     // Wait for any garbage data to be acked and cleared
@@ -168,22 +167,22 @@ class SapperTest extends AnyFunSuite {
   }
 
   def waitReset(dut: Sapper): Unit = {
-    dut.io.peripheralInterface.inReset #= true
+    dut.io.peripheralInterface.inSignal #= PeripheralInterface.SignalReset
     do {
       dut.clockDomain.waitSampling()
     } while (!dut.io.peripheralInterface.outAck.toBoolean)
 
-    dut.io.peripheralInterface.inReset #= false
+    dut.io.peripheralInterface.inSignal #= 0
     waitAckClear(dut)
   }
 
   def waitReq(dut: Sapper): Unit = {
-    dut.io.peripheralInterface.inWrite #= true
+    dut.io.peripheralInterface.inSignal #= PeripheralInterface.SignalWrite
     do {
       dut.clockDomain.waitSampling()
     } while (!dut.io.peripheralInterface.outAck.toBoolean)
 
-    dut.io.peripheralInterface.inWrite #= false
+    dut.io.peripheralInterface.inSignal #= 0
     waitAckClear(dut)
   }
 

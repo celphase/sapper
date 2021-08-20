@@ -1,6 +1,7 @@
 package sapper
 
 import spinal.core._
+import spinal.lib._
 import spinal.lib.fsm._
 
 import scala.language.postfixOps
@@ -8,9 +9,7 @@ import scala.language.postfixOps
 case class PeripheralController() extends Component {
   val io = new Bundle {
     val interface = PeripheralInterface()
-    val outMemoryAddress = out UInt (8 bits)
-    val outMemoryData = out Bits (8 bits)
-    val outMemoryWriteEnable = out Bool()
+    val memory = slave(MemoryInterface())
   }
 
   val addressLow = Reg(Bits(4 bits))
@@ -19,13 +18,11 @@ case class PeripheralController() extends Component {
   val wordHigh = Reg(Bits(4 bits))
 
   // Run signals through double flip-flop to avoid metastability
-  val reqStage = RegNext(io.interface.inWrite, False)
-  val req = RegNext(reqStage, False)
-  val resetStage = RegNext(io.interface.inReset, False)
-  val reset = RegNext(resetStage, False)
+  val signalStage: UInt = RegNext(io.interface.inSignal, 0)
+  val signal: UInt = RegNext(signalStage, 0)
 
   val fsm: StateMachine = new StateMachine {
-    io.outMemoryWriteEnable := False
+    io.memory.writeEnable := False
     io.interface.outAck := False
 
     // Address in
@@ -45,7 +42,7 @@ case class PeripheralController() extends Component {
 
     always {
       // Reset signal resets the state machine to start
-      when(reset)(goto(ackReset))
+      when(signal === PeripheralInterface.SignalReset)(goto(ackReset))
     }
 
     readAck(readAddressLow, ackAddressLow, addressLow, readAddressHigh)
@@ -56,7 +53,7 @@ case class PeripheralController() extends Component {
     def readAck(readState: State, ackState: State, target: Bits, nextState: State): Unit = {
       readState
         .whenIsActive {
-          when(req) {
+          when(signal === PeripheralInterface.SignalWrite) {
             target := io.interface.inNibble
             goto(ackState)
           }
@@ -66,19 +63,19 @@ case class PeripheralController() extends Component {
         .onEntry(io.interface.outAck := True)
         .whenIsActive {
           io.interface.outAck := True
-          when(!req)(goto(nextState))
+          when(signal =/= PeripheralInterface.SignalWrite)(goto(nextState))
         }
-        .onExit(io.outMemoryWriteEnable := True)
+        .onExit(io.memory.writeEnable := True)
     }
 
     ackReset
       .onEntry(io.interface.outAck := True)
       .whenIsActive {
         io.interface.outAck := True
-        when(!reset)(goto(readAddressLow))
+        when(signal =/= PeripheralInterface.SignalReset)(goto(readAddressLow))
       }
   }
 
-  io.outMemoryAddress := B(addressHigh, addressLow).asUInt
-  io.outMemoryData := B(wordHigh, wordLow)
+  io.memory.address := B(addressHigh, addressLow).asUInt
+  io.memory.writeWord := B(wordHigh, wordLow)
 }
