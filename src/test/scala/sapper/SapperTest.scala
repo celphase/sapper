@@ -136,9 +136,9 @@ class SapperTest extends AnyFunSuite {
     // Pull down everything
     println("Pulling down and clearing ack")
     dut.io.sw #= 0
-    dut.io.inReq #= false
-    dut.io.inPReset #= false
-    dut.io.inNibble #= 0
+    dut.io.peripheralInterface.inWrite #= false
+    dut.io.peripheralInterface.inReset #= false
+    dut.io.peripheralInterface.inNibble #= 0
 
     // Wait for any garbage data to be acked and cleared
     waitAckClear(dut)
@@ -149,41 +149,41 @@ class SapperTest extends AnyFunSuite {
     waitReset(dut)
 
     // Write memory address
-    dut.io.inNibble #= nibl(address)
+    dut.io.peripheralInterface.inNibble #= nibl(address)
     waitReq(dut)
-    dut.io.inNibble #= nibh(address)
+    dut.io.peripheralInterface.inNibble #= nibh(address)
     waitReq(dut)
 
     // Write word
-    dut.io.inNibble #= nibl(value)
+    dut.io.peripheralInterface.inNibble #= nibl(value)
     waitReq(dut)
-    dut.io.inNibble #= nibh(value)
+    dut.io.peripheralInterface.inNibble #= nibh(value)
     waitReq(dut)
   }
 
   def waitAckClear(dut: Sapper): Unit = {
     do {
       dut.clockDomain.waitSampling()
-    } while (dut.io.outAck.toBoolean)
+    } while (dut.io.peripheralInterface.outAck.toBoolean)
   }
 
   def waitReset(dut: Sapper): Unit = {
-    dut.io.inPReset #= true
+    dut.io.peripheralInterface.inReset #= true
     do {
       dut.clockDomain.waitSampling()
-    } while (!dut.io.outAck.toBoolean)
+    } while (!dut.io.peripheralInterface.outAck.toBoolean)
 
-    dut.io.inPReset #= false
+    dut.io.peripheralInterface.inReset #= false
     waitAckClear(dut)
   }
 
   def waitReq(dut: Sapper): Unit = {
-    dut.io.inReq #= true
+    dut.io.peripheralInterface.inWrite #= true
     do {
       dut.clockDomain.waitSampling()
-    } while (!dut.io.outAck.toBoolean)
+    } while (!dut.io.peripheralInterface.outAck.toBoolean)
 
-    dut.io.inReq #= false
+    dut.io.peripheralInterface.inWrite #= false
     waitAckClear(dut)
   }
 

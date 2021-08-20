@@ -7,11 +7,8 @@ import scala.language.postfixOps
 case class Sapper(simulation: Boolean) extends Component {
   val io = new Bundle {
     val sw = in Bits (16 bits)
-    val inReq = in Bool()
-    val inPReset = in Bool()
-    val outAck = out Bool()
-    val inNibble = in Bits (4 bits)
     val led = out Bits (9 bits)
+    val peripheralInterface = PeripheralInterface()
   }.setName("")
 
   val wordBus = WordBus()
@@ -51,14 +48,11 @@ case class Sapper(simulation: Boolean) extends Component {
   memory.io.inWriteEnable := io.sw(15)
   wordBus.io.inMemory := memory.io.outValue
 
-  val peripheralInterface = PeripheralInterface()
-  peripheralInterface.io.inReq := io.inReq
-  peripheralInterface.io.inReset := io.inPReset
-  io.outAck := peripheralInterface.io.outAck
-  peripheralInterface.io.inNibble := io.inNibble
-  memory.io.inPeripheralAddress := peripheralInterface.io.outMemoryAddress
-  memory.io.inPeripheralData := peripheralInterface.io.outMemoryData
-  memory.io.inPeripheralWriteEnable := peripheralInterface.io.outMemoryWriteEnable
+  val peripheralController = PeripheralController()
+  peripheralController.io.interface <> io.peripheralInterface
+  memory.io.inPeripheralAddress := peripheralController.io.outMemoryAddress
+  memory.io.inPeripheralData := peripheralController.io.outMemoryData
+  memory.io.inPeripheralWriteEnable := peripheralController.io.outMemoryWriteEnable
 
   // Program counter
   val programCounter = Reg(UInt(8 bits)) init 0
