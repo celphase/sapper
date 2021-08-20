@@ -1,6 +1,7 @@
 package sapper
 
 import spinal.core._
+import spinal.lib.fsm._
 
 import scala.language.postfixOps
 
@@ -20,8 +21,6 @@ case class PeripheralInterface() extends Component {
   val addressHigh = Reg(Bits(4 bits))
   val wordLow = Reg(Bits(4 bits))
   val wordHigh = Reg(Bits(4 bits))
-  val ack = Reg(Bool(), False)
-  val state = Reg(UInt(2 bits)) init 0
 
   // Run signals through double flip-flop to avoid metastability
   val reqStage = RegNext(io.inReq, False)
@@ -29,46 +28,97 @@ case class PeripheralInterface() extends Component {
   val resetStage = RegNext(io.inReset, False)
   val reset = RegNext(resetStage, False)
 
-  // When reset is given, state goes back to 0
-  when(reset.rise) {
-    state := 0
-    ack := True
-  }
-  when(reset.fall) {
-    ack := False
-  }
+  // This will get overwritten by states
+  io.outAck := False
 
-  // We track what to do sequentially
-  when(req.rise) {
-    ack := True
-    switch(state) {
-      is(0) {
-        addressLow := io.inNibble
-      }
-      is(1) {
-        addressHigh := io.inNibble
-      }
-      is(2) {
-        wordLow := io.inNibble
-      }
-      is(3) {
-        wordHigh := io.inNibble
+  val fsm: StateMachine = new StateMachine {
+    io.outMemoryWriteEnable := False
+
+    val readAddressLow = new State with EntryPoint
+    val ackAddressLow = new State
+    val readAddressHigh = new State
+    val ackAddressHigh = new State
+    val readWordLow = new State
+    val ackWordLow = new State
+    val readWordHigh = new State
+    val ackWordHigh = new State
+
+    always {
+      // Reset signal resets the state machine to start
+      when(reset) {
+        io.outAck := True
+        goto(readAddressLow)
       }
     }
-  }
-  when(req.fall) {
-    // This wraps around intentionally to reset
-    state := state + 1
-    ack := False
-  }
 
-  // Delay memory write by one clock cycle
-  io.outMemoryWriteEnable := False
-  when(ack.rise && state === 3) {
-    io.outMemoryWriteEnable := True
+    readAddressLow
+      .whenIsActive {
+        when(req) {
+          addressLow := io.inNibble
+          goto(ackAddressLow)
+        }
+      }
+
+    ackAddressLow
+      .onEntry(io.outAck := True)
+      .whenIsActive {
+        when(!req) {
+          goto(readAddressHigh)
+        }
+      }
+
+
+    readAddressHigh
+      .whenIsActive {
+        when(req) {
+          addressHigh := io.inNibble
+          goto(ackAddressHigh)
+        }
+      }
+
+    ackAddressHigh
+      .onEntry(io.outAck := True)
+      .whenIsActive {
+        when(!req) {
+          goto(readWordLow)
+        }
+      }
+
+
+    readWordLow
+      .whenIsActive {
+        when(req) {
+          wordLow := io.inNibble
+          goto(ackWordLow)
+        }
+      }
+
+    ackWordLow
+      .onEntry(io.outAck := True)
+      .whenIsActive {
+        when(!req) {
+          goto(readWordHigh)
+        }
+      }
+
+    readWordHigh
+      .whenIsActive {
+        when(req) {
+          wordHigh := io.inNibble
+          goto(ackWordHigh)
+        }
+      }
+
+    ackWordHigh
+      .onEntry(io.outAck := True)
+      .whenIsActive {
+        when(!req) {
+          goto(readAddressLow)
+        }
+      }
+      .onExit(io.outMemoryWriteEnable := True)
   }
 
   io.outMemoryAddress := B(addressHigh, addressLow).asUInt
   io.outMemoryData := B(wordHigh, wordLow)
-  io.outAck := ack
 }
