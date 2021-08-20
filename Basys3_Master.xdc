@@ -151,29 +151,29 @@ set_property PACKAGE_PIN V13 [get_ports {led[8]}]
 
 ##Pmod Header JB
 ##Sch name = JB1
-set_property PACKAGE_PIN A14 [get_ports inPReset]
-	set_property IOSTANDARD LVCMOS33 [get_ports inPReset]
+set_property PACKAGE_PIN A14 [get_ports peripheralInterface_inReset]
+	set_property IOSTANDARD LVCMOS33 [get_ports peripheralInterface_inReset]
 ##Sch name = JB2
-set_property PACKAGE_PIN A16 [get_ports inReq]
-	set_property IOSTANDARD LVCMOS33 [get_ports inReq]
+set_property PACKAGE_PIN A16 [get_ports peripheralInterface_inWrite]
+	set_property IOSTANDARD LVCMOS33 [get_ports peripheralInterface_inWrite]
 ##Sch name = JB3
-set_property PACKAGE_PIN B15 [get_ports outAck]
-	set_property IOSTANDARD LVCMOS33 [get_ports outAck]
+set_property PACKAGE_PIN B15 [get_ports peripheralInterface_outAck]
+	set_property IOSTANDARD LVCMOS33 [get_ports peripheralInterface_outAck]
 ##Sch name = JB4
 #set_property PACKAGE_PIN B16 [get_ports {JB[3]}]
 	#set_property IOSTANDARD LVCMOS33 [get_ports {JB[3]}]
 ##Sch name = JB7
-set_property PACKAGE_PIN A15 [get_ports {inNibble[0]}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {inNibble[0]}]
+set_property PACKAGE_PIN A15 [get_ports {peripheralInterface_inNibble[0]}]
+	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inNibble[0]}]
 ##Sch name = JB8
-set_property PACKAGE_PIN A17 [get_ports {inNibble[1]}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {inNibble[1]}]
+set_property PACKAGE_PIN A17 [get_ports {peripheralInterface_inNibble[1]}]
+	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inNibble[1]}]
 ##Sch name = JB9
-set_property PACKAGE_PIN C15 [get_ports {inNibble[2]}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {inNibble[2]}]
+set_property PACKAGE_PIN C15 [get_ports {peripheralInterface_inNibble[2]}]
+	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inNibble[2]}]
 ##Sch name = JB10
-set_property PACKAGE_PIN C16 [get_ports {inNibble[3]}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {inNibble[3]}]
+set_property PACKAGE_PIN C16 [get_ports {peripheralInterface_inNibble[3]}]
+	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inNibble[3]}]
 
 
 ##Pmod Header JC
