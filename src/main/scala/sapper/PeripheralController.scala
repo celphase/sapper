@@ -17,6 +17,10 @@ case class PeripheralController() extends Component {
   val wordLow = Reg(Bits(4 bits))
   val wordHigh = Reg(Bits(4 bits))
 
+  // The nibble's mode is controlled by the peripheral
+  io.interface.ioNibble.writeEnable := io.interface.inSignal === PeripheralInterface.SignalRead
+  io.interface.ioNibble.write := 0
+
   // Run signal through double flip-flop to avoid metastability
   val reqStage: Bool = RegNext(io.interface.inReq, False)
   val req: Bool = RegNext(reqStage, False)
@@ -54,7 +58,7 @@ case class PeripheralController() extends Component {
       readState
         .whenIsActive {
           when(req && io.interface.inSignal === PeripheralInterface.SignalWrite) {
-            target := io.interface.inNibble
+            target := io.interface.ioNibble.read
             goto(ackState)
           }
         }

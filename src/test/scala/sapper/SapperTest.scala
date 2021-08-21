@@ -137,7 +137,7 @@ class SapperTest extends AnyFunSuite {
     println("Pulling down and clearing ack")
     dut.io.sw #= 0
     dut.io.peripheralInterface.inSignal #= 0
-    dut.io.peripheralInterface.inNibble #= 0
+    dut.io.peripheralInterface.ioNibble.read #= 0
 
     // Wait for any garbage data to be acked and cleared
     waitAckClear(dut)
@@ -148,15 +148,15 @@ class SapperTest extends AnyFunSuite {
     waitReset(dut)
 
     // Write memory address
-    dut.io.peripheralInterface.inNibble #= nibl(address)
+    dut.io.peripheralInterface.ioNibble.read #= nibl(address)
     waitWrite(dut)
-    dut.io.peripheralInterface.inNibble #= nibh(address)
+    dut.io.peripheralInterface.ioNibble.read #= nibh(address)
     waitWrite(dut)
 
     // Write word
-    dut.io.peripheralInterface.inNibble #= nibl(value)
+    dut.io.peripheralInterface.ioNibble.read #= nibl(value)
     waitWrite(dut)
-    dut.io.peripheralInterface.inNibble #= nibh(value)
+    dut.io.peripheralInterface.ioNibble.read #= nibh(value)
     waitWrite(dut)
   }
 

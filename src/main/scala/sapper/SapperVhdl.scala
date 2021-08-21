@@ -1,6 +1,7 @@
 package sapper
 
 import spinal.core._
+import spinal.lib.io._
 
 object SapperVhdl {
   def main(args: Array[String]): Unit = {
@@ -8,7 +9,7 @@ object SapperVhdl {
       device = Device.XILINX,
       defaultConfigForClockDomains = ClockDomainConfig(resetKind = BOOT)
     )
-      .generateVhdl(Sapper(false))
+      .generateVhdl(InOutWrapper(Sapper(false)))
       .printPruned()
   }
 }
