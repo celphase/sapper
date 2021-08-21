@@ -17,9 +17,9 @@ case class PeripheralController() extends Component {
   val wordLow = Reg(Bits(4 bits))
   val wordHigh = Reg(Bits(4 bits))
 
-  // Run signals through double flip-flop to avoid metastability
-  val signalStage: UInt = RegNext(io.interface.inSignal, 0)
-  val signal: UInt = RegNext(signalStage, 0)
+  // Run signal through double flip-flop to avoid metastability
+  val reqStage: Bool = RegNext(io.interface.inReq, False)
+  val req: Bool = RegNext(reqStage, False)
 
   val fsm: StateMachine = new StateMachine {
     io.memory.writeEnable := False
@@ -42,7 +42,7 @@ case class PeripheralController() extends Component {
 
     always {
       // Reset signal resets the state machine to start
-      when(signal === PeripheralInterface.SignalReset)(goto(ackReset))
+      when(req && io.interface.inSignal === PeripheralInterface.SignalReset)(goto(ackReset))
     }
 
     readAck(readAddressLow, ackAddressLow, addressLow, readAddressHigh)
@@ -53,7 +53,7 @@ case class PeripheralController() extends Component {
     def readAck(readState: State, ackState: State, target: Bits, nextState: State): Unit = {
       readState
         .whenIsActive {
-          when(signal === PeripheralInterface.SignalWrite) {
+          when(req && io.interface.inSignal === PeripheralInterface.SignalWrite) {
             target := io.interface.inNibble
             goto(ackState)
           }
@@ -63,7 +63,7 @@ case class PeripheralController() extends Component {
         .onEntry(io.interface.outAck := True)
         .whenIsActive {
           io.interface.outAck := True
-          when(signal =/= PeripheralInterface.SignalWrite)(goto(nextState))
+          when(!req)(goto(nextState))
         }
         .onExit(io.memory.writeEnable := True)
     }
@@ -72,7 +72,7 @@ case class PeripheralController() extends Component {
       .onEntry(io.interface.outAck := True)
       .whenIsActive {
         io.interface.outAck := True
-        when(signal =/= PeripheralInterface.SignalReset)(goto(readAddressLow))
+        when(!req)(goto(readAddressLow))
       }
   }
 
