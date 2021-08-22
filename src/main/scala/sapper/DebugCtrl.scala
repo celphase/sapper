@@ -24,12 +24,12 @@ case class DebugCtrl() extends Component {
 
   // On every byte received, set memory
   val address = Reg(UInt(8 bits)) init 0
+  io.memory.address := address
 
   val fsm = new StateMachine {
     uartCtrl.io.read.ready := False
     uartCtrl.io.write.valid := False
     uartCtrl.io.write.payload := B(8 bits, default -> False)
-    io.memory.address := address
     io.memory.writeWord := B(8 bits, default -> False)
     io.memory.writeEnable := False
 
@@ -64,6 +64,15 @@ case class DebugCtrl() extends Component {
         when(uartCtrl.io.read.valid) {
           io.memory.writeWord := uartCtrl.io.read.payload
           io.memory.writeEnable := True
+          goto(readAddress)
+        }
+      }
+
+    writeData
+      .whenIsActive {
+        uartCtrl.io.write.valid := True
+        uartCtrl.io.write.payload := io.memory.readWord
+        when(uartCtrl.io.write.ready) {
           goto(readAddress)
         }
       }

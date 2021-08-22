@@ -17,7 +17,7 @@ class SapperTest extends AnyFunSuite {
     ))
     .compile(Sapper(true))
 
-  test("Peripheral Memory Write") {
+  test("UART Memory Read/Write") {
     compiled.doSim { dut =>
       waitInitialize(dut)
       val r = new Random(1234)
@@ -28,12 +28,9 @@ class SapperTest extends AnyFunSuite {
         val data = r.nextInt(256)
         writeToAddress(dut, address, data)
 
-        // Check from the CPU side that we can read the values onto the bus
-        dut.io.sw #= switches(bus = address, addressWrite = true)
-        dut.clockDomain.waitSampling()
-        dut.io.sw #= switches(select = 4)
-        dut.clockDomain.waitSampling()
-        assert(dut.io.led.toInt % 256 == data)
+        // Check that we can read back the value
+        val value = readFromAddress(dut, address)
+        assert(value == data)
       }
     }
   }
@@ -140,7 +137,7 @@ class SapperTest extends AnyFunSuite {
   }
 
   def writeToAddress(dut: Sapper, address: Int, value: Int): Unit = {
-    println(s"Writing $value to 0x${address.toHexString}")
+    println(s"Writing 0x${value.toHexString} to 0x${address.toHexString}")
 
     writePayload(dut, address)
     writePayload(dut, 0)
@@ -150,9 +147,16 @@ class SapperTest extends AnyFunSuite {
   def readFromAddress(dut: Sapper, address: Int): Int = {
     println(s"Reading from 0x${address.toHexString}")
 
+    var result = 0
+    val handle = fork {
+      result = readPayload(dut)
+    }
+
     writePayload(dut, address)
     writePayload(dut, 1)
-    readPayload(dut)
+
+    handle.join()
+    result
   }
 
   def writePayload(dut: Sapper, payload: Int): Unit = {
@@ -165,7 +169,7 @@ class SapperTest extends AnyFunSuite {
     }
 
     dut.io.uart.rxd #= true
-    dut.clockDomain.waitRisingEdge(baudPeriod)
+    dut.clockDomain.waitRisingEdge(baudPeriod * 4)
   }
 
   def readPayload(dut: Sapper): Int = {
