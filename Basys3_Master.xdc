@@ -151,29 +151,29 @@ set_property PACKAGE_PIN V13 [get_ports {led[8]}]
 
 ##Pmod Header JB
 ##Sch name = JB1
-set_property PACKAGE_PIN A14 [get_ports {peripheralInterface_inReq}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inReq}]
+#set_property PACKAGE_PIN A14 [get_ports {peripheralInterface_inReq}]
+	#set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inReq}]
 ##Sch name = JB2
-set_property PACKAGE_PIN A16 [get_ports {peripheralInterface_outAck}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_outAck}]
+#set_property PACKAGE_PIN A16 [get_ports {peripheralInterface_outAck}]
+	#set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_outAck}]
 ##Sch name = JB3
-set_property PACKAGE_PIN B15 [get_ports {peripheralInterface_inSignal[0]}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inSignal[0]}]
+#set_property PACKAGE_PIN B15 [get_ports {peripheralInterface_inSignal[0]}]
+	#set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_inSignal[0]}]
 ##Sch name = JB4
-set_property PACKAGE_PIN B16 [get_ports peripheralInterface_inSignal[1]]
-	set_property IOSTANDARD LVCMOS33 [get_ports peripheralInterface_inSignal[1]]
+#set_property PACKAGE_PIN B16 [get_ports peripheralInterface_inSignal[1]]
+	#set_property IOSTANDARD LVCMOS33 [get_ports peripheralInterface_inSignal[1]]
 ##Sch name = JB7
-set_property PACKAGE_PIN A15 [get_ports {peripheralInterface_ioNibble[0]}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_ioNibble[0]}]
+#set_property PACKAGE_PIN A15 [get_ports {peripheralInterface_ioNibble[0]}]
+	#set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_ioNibble[0]}]
 ##Sch name = JB8
-set_property PACKAGE_PIN A17 [get_ports {peripheralInterface_ioNibble[1]}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_ioNibble[1]}]
+#set_property PACKAGE_PIN A17 [get_ports {peripheralInterface_ioNibble[1]}]
+	#set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_ioNibble[1]}]
 ##Sch name = JB9
-set_property PACKAGE_PIN C15 [get_ports {peripheralInterface_ioNibble[2]}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_ioNibble[2]}]
+#set_property PACKAGE_PIN C15 [get_ports {peripheralInterface_ioNibble[2]}]
+	#set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_ioNibble[2]}]
 ##Sch name = JB10
-set_property PACKAGE_PIN C16 [get_ports {peripheralInterface_ioNibble[3]}]
-	set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_ioNibble[3]}]
+#set_property PACKAGE_PIN C16 [get_ports {peripheralInterface_ioNibble[3]}]
+	#set_property IOSTANDARD LVCMOS33 [get_ports {peripheralInterface_ioNibble[3]}]
 
 
 ##Pmod Header JC
@@ -263,10 +263,10 @@ set_property PACKAGE_PIN C16 [get_ports {peripheralInterface_ioNibble[3]}]
 
 
 ##USB-RS232 Interface
-#set_property PACKAGE_PIN B18 [get_ports RsRx]
-	#set_property IOSTANDARD LVCMOS33 [get_ports RsRx]
-#set_property PACKAGE_PIN A18 [get_ports RsTx]
-	#set_property IOSTANDARD LVCMOS33 [get_ports RsTx]
+set_property PACKAGE_PIN B18 [get_ports uart_rxd]
+	set_property IOSTANDARD LVCMOS33 [get_ports uart_rxd]
+set_property PACKAGE_PIN A18 [get_ports uart_txd]
+	set_property IOSTANDARD LVCMOS33 [get_ports uart_txd]
 
 
 ##USB HID (PS/2)
