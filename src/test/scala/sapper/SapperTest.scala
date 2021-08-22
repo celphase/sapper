@@ -126,25 +126,36 @@ class SapperTest extends AnyFunSuite {
     }
   }
 
+  val baudPeriod = 100000000 / 115200
+
   def waitInitialize(dut: Sapper): Unit = {
     println("Initializing IO")
     dut.io.sw #= 0
     dut.io.uart.rxd #= true
 
     dut.clockDomain.forkStimulus(period = 10)
-    dut.clockDomain.waitRisingEdge(100000000 / 9600)
+
+    // Wait one baud rate length just so things have time to start up
+    dut.clockDomain.waitRisingEdge(baudPeriod)
   }
 
   def writeToAddress(dut: Sapper, address: Int, value: Int): Unit = {
     println(s"Writing $value to 0x${address.toHexString}")
 
     writePayload(dut, address)
+    writePayload(dut, 0)
     writePayload(dut, value)
   }
 
-  def writePayload(dut: Sapper, payload: Int): Unit = {
-    val baudPeriod = 100000000 / 115200
+  def readFromAddress(dut: Sapper, address: Int): Int = {
+    println(s"Reading from 0x${address.toHexString}")
 
+    writePayload(dut, address)
+    writePayload(dut, 1)
+    readPayload(dut)
+  }
+
+  def writePayload(dut: Sapper, payload: Int): Unit = {
     dut.io.uart.rxd #= false
     dut.clockDomain.waitRisingEdge(baudPeriod)
 
@@ -155,6 +166,39 @@ class SapperTest extends AnyFunSuite {
 
     dut.io.uart.rxd #= true
     dut.clockDomain.waitRisingEdge(baudPeriod)
+  }
+
+  def readPayload(dut: Sapper): Int = {
+    // Wait for read to be ready to give us data (set to false)
+    while (dut.io.uart.txd.toBoolean) {
+      dut.clockDomain.waitRisingEdge()
+    }
+
+    // Wait till the middle of the sync bit
+    dut.clockDomain.waitRisingEdge(baudPeriod / 2)
+    if (dut.io.uart.txd.toBoolean) {
+      fail("UART frame not started correctly")
+    }
+
+    // Wait for the first data bit
+    dut.clockDomain.waitRisingEdge(baudPeriod)
+
+    var buffer = 0
+    (0 to 7).foreach { bitId =>
+      if (dut.io.uart.txd.toBoolean) {
+        buffer |= 1 << bitId
+      }
+
+      // Wait for next bit
+      dut.clockDomain.waitRisingEdge(baudPeriod)
+    }
+
+    // Make sure the frame's done
+    if (!dut.io.uart.txd.toBoolean) {
+      fail("UART frame not ended correctly")
+    }
+
+    buffer
   }
 
   def switches(

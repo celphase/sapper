@@ -3,6 +3,7 @@ package sapper
 import spinal.core._
 import spinal.lib._
 import spinal.lib.com.uart._
+import spinal.lib.fsm._
 
 import scala.language.postfixOps
 
@@ -21,27 +22,50 @@ case class DebugCtrl() extends Component {
   ))
   uartCtrl.io.uart <> io.uart
 
-  // We're not sending out data right now
-  uartCtrl.io.write.valid := False
-  uartCtrl.io.write.payload := B(8 bits, default -> False)
-
   // On every byte received, set memory
   val address = Reg(UInt(8 bits)) init 0
-  io.memory.address := address
-  io.memory.writeWord := B(8 bits, default -> False)
-  io.memory.writeEnable := False
 
-  val awaitData = Reg(Bool, False)
+  val fsm = new StateMachine {
+    uartCtrl.io.read.ready := False
+    uartCtrl.io.write.valid := False
+    uartCtrl.io.write.payload := B(8 bits, default -> False)
+    io.memory.address := address
+    io.memory.writeWord := B(8 bits, default -> False)
+    io.memory.writeEnable := False
 
-  uartCtrl.io.read.ready := True
-  when(uartCtrl.io.read.valid.rise) {
-    when(!awaitData) {
-      address := uartCtrl.io.read.payload.asUInt
-      awaitData := True
-    } otherwise {
-      io.memory.writeWord := uartCtrl.io.read.payload
-      io.memory.writeEnable := True
-      awaitData := False
-    }
+    val readAddress = new State() with EntryPoint
+    val readMode = new State()
+    val readData = new State()
+    val writeData = new State()
+
+    readAddress
+      .whenIsActive {
+        uartCtrl.io.read.ready := True
+        when(uartCtrl.io.read.valid) {
+          address := uartCtrl.io.read.payload.asUInt
+          goto(readMode)
+        }
+      }
+
+    readMode
+      .whenIsActive {
+        uartCtrl.io.read.ready := True
+        when(uartCtrl.io.read.valid) {
+          switch(uartCtrl.io.read.payload) {
+            is(0)(goto(readData))
+            is(1)(goto(writeData))
+          }
+        }
+      }
+
+    readData
+      .whenIsActive {
+        uartCtrl.io.read.ready := True
+        when(uartCtrl.io.read.valid) {
+          io.memory.writeWord := uartCtrl.io.read.payload
+          io.memory.writeEnable := True
+          goto(readAddress)
+        }
+      }
   }
 }
