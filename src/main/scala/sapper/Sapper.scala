@@ -1,6 +1,8 @@
 package sapper
 
 import spinal.core._
+import spinal.lib._
+import spinal.lib.com.uart._
 
 import scala.language.postfixOps
 
@@ -8,7 +10,7 @@ case class Sapper(simulation: Boolean) extends Component {
   val io = new Bundle {
     val sw = in Bits (16 bits)
     val led = out Bits (9 bits)
-    val peripheralInterface = PeripheralInterface()
+    val uart = master(Uart())
   }.setName("")
 
   val wordBus = WordBus()
@@ -42,22 +44,22 @@ case class Sapper(simulation: Boolean) extends Component {
   // This is necessary because this lets the memory immediately fetch the new data without waiting for the register
   val addressBus = io.sw(14) ? wordBus.io.outValue | addressRegister.io.outValue
 
-  val memory = Memory()
-  memory.io.main.address := addressBus.asUInt
-  memory.io.main.writeWord := wordBus.io.outValue
-  memory.io.main.writeEnable := io.sw(15)
-  wordBus.io.inMemory := memory.io.main.readWord
-
-  // Peripheral controller
-  val peripheralController = PeripheralController()
-  peripheralController.io.interface <> io.peripheralInterface
-  peripheralController.io.memory <> memory.io.peripheral
+  val memoryCtrl = MemoryCtrl()
+  memoryCtrl.io.main.address := addressBus.asUInt
+  memoryCtrl.io.main.writeWord := wordBus.io.outValue
+  memoryCtrl.io.main.writeEnable := io.sw(15)
+  wordBus.io.inMemory := memoryCtrl.io.main.readWord
 
   // Program counter
   val programCounter = Reg(UInt(8 bits)) init 0
 
   // Increment the counter every clock
   programCounter := programCounter + 1
+
+  // Debugging UART
+  val debugCtrl = DebugCtrl()
+  debugCtrl.io.uart <> io.uart
+  debugCtrl.io.memory <> memoryCtrl.io.debug
 
   // Output to device IO
   io.led(7 downto 0) := wordBus.io.outValue

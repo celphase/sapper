@@ -11,6 +11,10 @@ class SapperTest extends AnyFunSuite {
   val compiled = SimConfig
     .withWave
     .addSimulatorFlag("-Wno-MULTIDRIVEN")
+    .withConfig(SpinalConfig(
+      defaultConfigForClockDomains = ClockDomainConfig(resetKind = BOOT),
+      defaultClockDomainFrequency = FixedFrequency(100 MHz)
+    ))
     .compile(Sapper(true))
 
   test("Peripheral Memory Write") {
@@ -20,24 +24,16 @@ class SapperTest extends AnyFunSuite {
 
       for (_ <- 1 to 10) {
         // Fill memory with the values we want to add
-        val value0 = r.nextInt(256)
-        val value1 = r.nextInt(256)
-        writeToAddress(dut, value0, address = 0x00)
-        writeToAddress(dut, value1, address = 0x01)
+        val address = r.nextInt(256)
+        val data = r.nextInt(256)
+        writeToAddress(dut, address, data)
 
         // Check from the CPU side that we can read the values onto the bus
-        //noinspection RedundantDefaultArgument
-        dut.io.sw #= switches(bus = 0x00, addressWrite = true)
+        dut.io.sw #= switches(bus = address, addressWrite = true)
         dut.clockDomain.waitSampling()
         dut.io.sw #= switches(select = 4)
         dut.clockDomain.waitSampling()
-        assert(dut.io.led.toInt % 256 == value0)
-
-        dut.io.sw #= switches(bus = 0x01, addressWrite = true)
-        dut.clockDomain.waitSampling()
-        dut.io.sw #= switches(select = 4)
-        dut.clockDomain.waitSampling()
-        assert(dut.io.led.toInt % 256 == value1)
+        assert(dut.io.led.toInt % 256 == data)
       }
     }
   }
@@ -131,75 +127,34 @@ class SapperTest extends AnyFunSuite {
   }
 
   def waitInitialize(dut: Sapper): Unit = {
-    dut.clockDomain.forkStimulus(period = 10)
-
-    // Pull down everything
-    println("Pulling down and clearing ack")
+    println("Initializing IO")
     dut.io.sw #= 0
-    dut.io.peripheralInterface.inSignal #= 0
-    dut.io.peripheralInterface.ioNibble.read #= 0
+    dut.io.uart.rxd #= true
 
-    // Wait for any garbage data to be acked and cleared
-    waitAckClear(dut)
+    dut.clockDomain.forkStimulus(period = 10)
+    dut.clockDomain.waitRisingEdge(100000000 / 9600)
   }
 
-  def writeToAddress(dut: Sapper, value: Int, address: Int): Unit = {
+  def writeToAddress(dut: Sapper, address: Int, value: Int): Unit = {
     println(s"Writing $value to 0x${address.toHexString}")
-    waitReset(dut)
 
-    // Write memory address
-    dut.io.peripheralInterface.ioNibble.read #= nibl(address)
-    waitWrite(dut)
-    dut.io.peripheralInterface.ioNibble.read #= nibh(address)
-    waitWrite(dut)
-
-    // Write word
-    dut.io.peripheralInterface.ioNibble.read #= nibl(value)
-    waitWrite(dut)
-    dut.io.peripheralInterface.ioNibble.read #= nibh(value)
-    waitWrite(dut)
+    writePayload(dut, address)
+    writePayload(dut, value)
   }
 
-  def waitAckClear(dut: Sapper): Unit = {
-    do {
-      dut.clockDomain.waitSampling()
-    } while (dut.io.peripheralInterface.outAck.toBoolean)
-  }
+  def writePayload(dut: Sapper, payload: Int): Unit = {
+    val baudPeriod = 100000000 / 115200
 
-  def waitReset(dut: Sapper): Unit = {
-    dut.io.peripheralInterface.inSignal #= PeripheralInterface.SignalReset
+    dut.io.uart.rxd #= false
+    dut.clockDomain.waitRisingEdge(baudPeriod)
 
-    dut.io.peripheralInterface.inReq #= true
-    do {
-      dut.clockDomain.waitSampling()
-    } while (!dut.io.peripheralInterface.outAck.toBoolean)
+    (0 to 7).foreach { bitId =>
+      dut.io.uart.rxd #= ((payload >> bitId) & 1) != 0
+      dut.clockDomain.waitRisingEdge(baudPeriod)
+    }
 
-    dut.io.peripheralInterface.inReq #= false
-    waitAckClear(dut)
-
-    dut.io.peripheralInterface.inSignal #= 0
-  }
-
-  def waitWrite(dut: Sapper): Unit = {
-    dut.io.peripheralInterface.inSignal #= PeripheralInterface.SignalWrite
-
-    dut.io.peripheralInterface.inReq #= true
-    do {
-      dut.clockDomain.waitSampling()
-    } while (!dut.io.peripheralInterface.outAck.toBoolean)
-
-    dut.io.peripheralInterface.inReq #= false
-    waitAckClear(dut)
-
-    dut.io.peripheralInterface.inSignal #= 0
-  }
-
-  def nibl(value: Int): Int = {
-    value & 0x0F
-  }
-
-  def nibh(value: Int): Int = {
-    (value >> 4) & 0x0F
+    dut.io.uart.rxd #= true
+    dut.clockDomain.waitRisingEdge(baudPeriod)
   }
 
   def switches(

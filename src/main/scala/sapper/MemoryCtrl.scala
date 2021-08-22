@@ -5,10 +5,10 @@ import spinal.lib._
 
 import scala.language.postfixOps
 
-case class Memory() extends Component {
+case class MemoryCtrl() extends Component {
   val io = new Bundle {
     val main = master(MemoryInterface())
-    val peripheral = master(MemoryInterface())
+    val debug = master(MemoryInterface())
   }
 
   val memory = Mem(Bits(8 bits), wordCount = 256)
@@ -22,11 +22,11 @@ case class Memory() extends Component {
     clockCrossing = true
   )
 
-  io.peripheral.readWord := memory.readWriteSync(
-    address = io.peripheral.address,
-    data = io.peripheral.writeWord,
+  io.debug.readWord := memory.readWriteSync(
+    address = io.debug.address,
+    data = io.debug.writeWord,
     enable = True,
-    write = io.peripheral.writeEnable,
+    write = io.debug.writeEnable,
     clockCrossing = true
   )
 }
