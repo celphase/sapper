@@ -13,7 +13,7 @@ case class ExecutionController() extends Component {
   }
 
   // Microcode ROM
-  // Instruction: reserved, alu mode, 3 bits STORE, 3 bits SELECT
+  // Instruction: reserved, alu mode, 3 bits bus store, 3 bits bus read
   // All instructions end with fetching a new instruction and resetting the micro-step counter
   // 8 slots of microcode per instruction (3 bit micro-step counter)
   val MC_BUS_READ_MEMORY = "0000_0011" b
@@ -40,7 +40,13 @@ case class ExecutionController() extends Component {
 
   // Microcode sub-steps
   val microStep = Reg(UInt(3 bits)) init 0
-  microStep := microStep + 1
+
+  // If the instruction got overwritten, go back to 0 for the micro-step, otherwise increment
+  when(storeInstruction) {
+    microStep := 0
+  } otherwise {
+    microStep := microStep + 1
+  }
 
   // Fetch the micro-instruction from the ROM
   val microAddress = B(instruction, microStep).asUInt
@@ -68,7 +74,5 @@ case class ExecutionController() extends Component {
   io.outSignals.aluMode := signalBits(6)
 
   // Writing the program counter to the bus will increment it on the next cycle
-  when(busSelect === 4) {
-    programCounter := programCounter + 1
-  }
+  when(busSelect === 4)(programCounter := programCounter + 1)
 }
