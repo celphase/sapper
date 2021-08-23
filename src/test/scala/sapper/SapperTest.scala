@@ -18,13 +18,13 @@ class SapperTest extends AnyFunSuite {
     .compile(Sapper(true))
 
   test("UART Memory Read/Write") {
-    compiled.doSim { dut =>
+    compiled.doSim("uart-memory") { dut =>
       waitInitialize(dut)
       val r = new Random(1234)
 
       for (_ <- 1 to 10) {
         // Fill memory with the values we want to add
-        val address = r.nextInt(256)
+        val address = r.nextInt(254) + 2
         val data = r.nextInt(256)
         writeToAddress(dut, address, data)
 
@@ -35,7 +35,16 @@ class SapperTest extends AnyFunSuite {
     }
   }
 
-  test("Registers") {
+  test("Execution Controller Run") {
+    compiled.doSim("execution-run") { dut =>
+      waitInitialize(dut)
+      // This test exists mainly so we can check the waveform
+      dut.clockDomain.waitRisingEdge(10)
+    }
+  }
+
+  // TODO: These tests are disabled until programs can be executed
+  /*test("Registers") {
     compiled.doSim { dut =>
       waitInitialize(dut)
       val r = new Random(1234)
@@ -121,19 +130,16 @@ class SapperTest extends AnyFunSuite {
         assert(result == expected, s"Got $result expected $value0 - $value1 = $expected")
       }
     }
-  }
+  }*/
 
   val baudPeriod = 100000000 / 115200
 
   def waitInitialize(dut: Sapper): Unit = {
     println("Initializing IO")
-    dut.io.sw #= 0
     dut.io.uart.rxd #= true
 
     dut.clockDomain.forkStimulus(period = 10)
-
-    // Wait one baud rate length just so things have time to start up
-    dut.clockDomain.waitRisingEdge(baudPeriod)
+    dut.clockDomain.waitRisingEdge()
   }
 
   def writeToAddress(dut: Sapper, address: Int, value: Int): Unit = {
@@ -203,24 +209,5 @@ class SapperTest extends AnyFunSuite {
     }
 
     buffer
-  }
-
-  def switches(
-                bus: Int = 0,
-                select: Int = 0,
-                write0: Boolean = false,
-                write1: Boolean = false,
-                subtract: Boolean = false,
-                addressWrite: Boolean = false,
-                memWrite: Boolean = false
-              ): Int = {
-    var switches = bus
-    switches |= select << 8
-    switches |= write0.toInt << 11
-    switches |= write1.toInt << 12
-    switches |= subtract.toInt << 13
-    switches |= addressWrite.toInt << 14
-    switches |= memWrite.toInt << 15
-    switches
   }
 }

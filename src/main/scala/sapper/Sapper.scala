@@ -8,60 +8,48 @@ import scala.language.postfixOps
 
 case class Sapper(simulation: Boolean) extends Component {
   val io = new Bundle {
-    val sw = in Bits (16 bits)
-    val led = out Bits (9 bits)
     val uart = master(Uart())
   }.setName("")
 
+  val controlSignals = ControlSignals()
   val wordBus = WordBus()
-  wordBus.io.inSelect := io.sw(10 downto 8)
-  wordBus.io.inSwitches := io.sw(7 downto 0)
+  wordBus.io.inSelect := controlSignals.select
 
   // General purpose & math registers
-  val register0 = Register()
-  register0.io.inBus := wordBus.io.outValue
-  register0.io.inWriteEnable := io.sw(11)
-  wordBus.io.inRegister0 := register0.io.outValue
+  val register0 = RegNextWhen(wordBus.io.outValue, controlSignals.writeRegister0)
+  wordBus.io.inRegister0 := register0
 
-  val register1 = Register()
-  register1.io.inBus := wordBus.io.outValue
-  register1.io.inWriteEnable := io.sw(12)
-  wordBus.io.inRegister1 := register1.io.outValue
+  val register1 = RegNextWhen(wordBus.io.outValue, controlSignals.writeRegister1)
+  wordBus.io.inRegister1 := register1
 
   // ALU
   val alu = ALU()
-  alu.io.inRegister0 := register0.io.outValue
-  alu.io.inRegister1 := register1.io.outValue
-  alu.io.inMode := io.sw(13)
+  alu.io.inRegister0 := register0
+  alu.io.inRegister1 := register1
+  alu.io.inMode := controlSignals.aluMode
   wordBus.io.inAlu := alu.io.outValue
 
   // Memory
-  val addressRegister = Register()
-  addressRegister.io.inBus := wordBus.io.outValue
-  addressRegister.io.inWriteEnable := io.sw(14)
+  val addressRegister = RegNextWhen(wordBus.io.outValue, controlSignals.writeAddressRegister)
 
   // If the register is currently being written to, shortcut the bus immediately to the memory address
   // This is necessary because this lets the memory immediately fetch the new data without waiting for the register
-  val addressBus = io.sw(14) ? wordBus.io.outValue | addressRegister.io.outValue
+  val addressBus = controlSignals.writeAddressRegister ? wordBus.io.outValue | addressRegister
 
   val memoryCtrl = MemoryCtrl()
   memoryCtrl.io.main.address := addressBus.asUInt
   memoryCtrl.io.main.writeWord := wordBus.io.outValue
-  memoryCtrl.io.main.writeEnable := io.sw(15)
+  memoryCtrl.io.main.writeEnable := controlSignals.writeMemory
   wordBus.io.inMemory := memoryCtrl.io.main.readWord
 
-  // Program counter
-  val programCounter = Reg(UInt(8 bits)) init 0
-
-  // Increment the counter every clock
-  programCounter := programCounter + 1
+  // Execution controller
+  val executionController = ExecutionController()
+  executionController.io.inBus := wordBus.io.outValue
+  controlSignals := executionController.io.outSignals
+  wordBus.io.inProgramCounter := executionController.io.outProgramCounter.asBits
 
   // Debugging UART
   val debugCtrl = DebugCtrl()
   debugCtrl.io.uart <> io.uart
   debugCtrl.io.memory <> memoryCtrl.io.debug
-
-  // Output to device IO
-  io.led(7 downto 0) := wordBus.io.outValue
-  io.led(8) := alu.io.outCarry
 }
