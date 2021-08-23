@@ -15,7 +15,7 @@ case class ExecutionController() extends Component {
   // Microcode ROM
   val MC_BUS_SELECT_MEMORY = "0_0000_0011" b
   val MC_BUS_SELECT_PROGRAM_COUNTER = "0_0000_0100" b
-  val MC_WRITE_ADDRESS = "0_0010_0000" b
+  val MC_WRITE_ADDRESS = "0_0100_0000" b
   val MC_STORE_INSTRUCTION = "1_0000_0000" b
   val microcode = Mem(
     Bits(9 bits),
