@@ -14,8 +14,8 @@ case class ExecutionController() extends Component {
 
   // Microcode ROM
   // Instruction: reserved, alu mode, 3 bits STORE, 3 bits SELECT
-  // All instructions end with fetching a new instruction and resetting the micro step counter
-  // 8 slots of microcode per instruction
+  // All instructions end with fetching a new instruction and resetting the micro-step counter
+  // 8 slots of microcode per instruction (3 bit micro-step counter)
   val MC_BUS_READ_MEMORY = "0000_0011" b
   val MC_BUS_READ_PROGRAM_COUNTER = "0000_0100" b
   val MC_BUS_WRITE_ADDRESS = "0001_1000" b
