@@ -20,7 +20,7 @@ case class ExecutionController() extends Component {
   val MC_BUS_READ_PROGRAM_COUNTER = "0000_0100" b
   val MC_BUS_WRITE_ADDRESS = "0001_1000" b
   val MC_BUS_WRITE_INSTRUCTION = "0010_1000" b
-  val microcode = Mem(
+  val microcodeRom = Mem(
     Bits(9 bits),
     Seq(
       // Get the memory to read the instruction
@@ -35,23 +35,33 @@ case class ExecutionController() extends Component {
   io.outProgramCounter := programCounter
 
   // Instruction register
-  val storeInstruction = Bool()
-  val instruction = RegNextWhen(io.inBus(3 downto 0), storeInstruction) init 0
+  val writeInstruction = Bool()
+  val instruction = RegNextWhen(io.inBus(3 downto 0), writeInstruction) init 0
 
   // Microcode sub-steps
-  val microStep = Reg(UInt(3 bits)) init 0
+  val currentMicroStep = Reg(UInt(3 bits)) init 0
+  val fetchMicroStep = UInt(3 bits)
 
-  // If the instruction got overwritten, go back to 0 for the micro-step, otherwise increment
-  when(storeInstruction) {
-    microStep := 0
+  // If the instruction got overwritten, go back to 0 for the next micro-step, otherwise increment
+  // Also shortcut fetch instruction for microcode fetching if we're going to overwrite, so that on the next clock tick
+  // we can fetch it before the register's set.
+  val fetchInstruction = Bits(4 bits)
+  when(writeInstruction) {
+    fetchInstruction := instruction
+    fetchMicroStep := 0
   } otherwise {
-    microStep := microStep + 1
+    fetchInstruction := io.inBus(3 downto 0)
+    fetchMicroStep := currentMicroStep + 1
   }
+  currentMicroStep := fetchMicroStep
 
   // Fetch the micro-instruction from the ROM
-  val microAddress = B(instruction, microStep).asUInt
+  val microAddress = B(fetchInstruction, fetchMicroStep).asUInt
   val trimmedAddress = microAddress(0).asUInt
-  val signalBits = microcode.readAsync(trimmedAddress)
+  val signalBits = microcodeRom.readSync(
+    address = trimmedAddress,
+    enable = True
+  )
 
   // Drive the signals for this micro-instruction
   val busSelect = signalBits(2 downto 0).asUInt
@@ -61,14 +71,14 @@ case class ExecutionController() extends Component {
   io.outSignals.writeRegister1 := False
   io.outSignals.writeAddressRegister := False
   io.outSignals.writeMemory := False
-  storeInstruction := False
+  writeInstruction := False
   switch(signalBits(5 downto 3)) {
     // 0 is intentionally left no-op
     is(1)(io.outSignals.writeRegister0 := True)
     is(2)(io.outSignals.writeRegister1 := True)
     is(3)(io.outSignals.writeAddressRegister := True)
     is(4)(io.outSignals.writeMemory := True)
-    is(5)(storeInstruction := True)
+    is(5)(writeInstruction := True)
   }
 
   io.outSignals.aluMode := signalBits(6)
