@@ -20,14 +20,27 @@ case class ExecutionController() extends Component {
   val MC_BUS_READ_PROGRAM_COUNTER = "0000_0100" b
   val MC_BUS_WRITE_ADDRESS = "0001_1000" b
   val MC_BUS_WRITE_INSTRUCTION = "0010_1000" b
+
+  // Get the memory to read the instruction
+  val readNextI = MC_BUS_READ_PROGRAM_COUNTER | MC_BUS_WRITE_ADDRESS
+  // Instruction should now be on the bus, bring it over to the execution controller
+  val writeNextI = MC_BUS_READ_MEMORY | MC_BUS_WRITE_INSTRUCTION
+
+  // Instruction microcode lists
+  val instructions = Seq(
+    // 0x0: NOP
+    Seq(readNextI, writeNextI),
+    // 0x1: LOAD
+    Seq(readNextI, writeNextI),
+    // 0x2: STORE
+    Seq(readNextI, writeNextI)
+  )
+
+  // Convert the microcode lists to microcode ROM, up to 8 instructions per slot
+  val padded = instructions.map { v => v.padTo(8, 0) }
   val microcodeRom = Mem(
     Bits(9 bits),
-    Seq(
-      // Get the memory to read the instruction
-      MC_BUS_READ_PROGRAM_COUNTER | MC_BUS_WRITE_ADDRESS,
-      // Instruction should now be on the bus, bring it over to the execution controller
-      MC_BUS_READ_MEMORY | MC_BUS_WRITE_INSTRUCTION
-    ).map { v => B(v) }
+    padded.flatten.map { v => B(v) }
   )
 
   // Program counter
@@ -40,12 +53,12 @@ case class ExecutionController() extends Component {
 
   // Microcode sub-steps
   val currentMicroStep = Reg(UInt(3 bits)) init 0
-  val fetchMicroStep = UInt(3 bits)
 
-  // If the instruction got overwritten, go back to 0 for the next micro-step, otherwise increment
+  // If the instruction got overwritten, go back to 0 for the next micro-step, otherwise increment.
   // Also shortcut fetch instruction for microcode fetching if we're going to overwrite, so that on the next clock tick
   // we can fetch it before the register's set.
   val fetchInstruction = Bits(4 bits)
+  val fetchMicroStep = UInt(3 bits)
   when(writeInstruction) {
     fetchInstruction := instruction
     fetchMicroStep := 0
@@ -57,7 +70,7 @@ case class ExecutionController() extends Component {
 
   // Fetch the micro-instruction from the ROM
   val microAddress = B(fetchInstruction, fetchMicroStep).asUInt
-  val trimmedAddress = microAddress(0).asUInt
+  val trimmedAddress = microAddress(4 downto 0)
   val signalBits = microcodeRom.readSync(
     address = trimmedAddress,
     enable = True
