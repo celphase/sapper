@@ -6,7 +6,7 @@ import spinal.lib.com.uart._
 
 import scala.language.postfixOps
 
-case class Sapper(simulation: Boolean) extends Component {
+case class Sapper(simulation: Boolean, initMemory: Seq[Byte]) extends Component {
   val io = new Bundle {
     val uart = master(Uart())
   }.setName("")
@@ -36,17 +36,17 @@ case class Sapper(simulation: Boolean) extends Component {
   // This is necessary because this lets the memory immediately fetch the new data without waiting for the register
   val addressBus = controlSignals.writeAddressRegister ? wordBus.io.outValue | addressRegister
 
-  val memoryCtrl = MemoryCtrl()
+  val memoryCtrl = MemoryCtrl(initMemory)
   memoryCtrl.io.main.address := addressBus.asUInt
   memoryCtrl.io.main.writeWord := wordBus.io.outValue
   memoryCtrl.io.main.writeEnable := controlSignals.writeMemory
   wordBus.io.inMemory := memoryCtrl.io.main.readWord
 
   // Execution controller
-  val executionController = ExecutionController()
-  executionController.io.inBus := wordBus.io.outValue
-  controlSignals := executionController.io.outSignals
-  wordBus.io.inProgramCounter := executionController.io.outProgramCounter.asBits
+  val executionCtrl = ExecutionCtrl()
+  executionCtrl.io.inBus := wordBus.io.outValue
+  controlSignals := executionCtrl.io.outSignals
+  wordBus.io.inProgramCounter := executionCtrl.io.outProgramCounter.asBits
 
   // Debugging UART
   val debugCtrl = DebugCtrl()

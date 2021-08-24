@@ -5,13 +5,13 @@ import spinal.lib._
 
 import scala.language.postfixOps
 
-case class MemoryCtrl() extends Component {
+case class MemoryCtrl(initMemory: Seq[Byte]) extends Component {
   val io = new Bundle {
     val main = master(MemoryInterface())
     val debug = master(MemoryInterface())
   }
 
-  val memory = Mem(Bits(8 bits), wordCount = 256)
+  val memory = Mem(Bits(8 bits), wordCount = 256) init initMemory.map { v => B(v) }
   memory.setTechnology(ramBlock)
 
   io.main.readWord := memory.readWriteSync(

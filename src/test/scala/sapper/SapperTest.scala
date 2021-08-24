@@ -8,6 +8,14 @@ import scala.language.postfixOps
 import scala.util.Random
 
 class SapperTest extends AnyFunSuite {
+  // Code for testing
+  val memory = Seq[Byte](
+    // NOP
+    0,
+    // JMP 0
+    6, 0
+  ).padTo(256, 0.toByte)
+
   val compiled = SimConfig
     .withWave
     .addSimulatorFlag("-Wno-MULTIDRIVEN")
@@ -15,7 +23,7 @@ class SapperTest extends AnyFunSuite {
       defaultConfigForClockDomains = ClockDomainConfig(resetKind = BOOT),
       defaultClockDomainFrequency = FixedFrequency(100 MHz)
     ))
-    .compile(Sapper(true))
+    .compile(Sapper(simulation = true, initMemory = memory))
 
   test("UART Memory Read/Write") {
     compiled.doSim("uart-memory") { dut =>
