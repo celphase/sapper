@@ -14,19 +14,20 @@ case class ExecutionCtrl() extends Component {
 
   // Microcode ROM
   // Instruction: reserved, alu mode, 3 bits bus store, 3 bits bus read
-  // All instructions end with fetching a new instruction and resetting the micro-step counter
   // 8 slots of microcode per instruction (3 bit micro-step counter)
   val MC_BUS_READ_MEMORY = "0000_0011" b
   val MC_BUS_READ_PROGRAM_COUNTER = "0000_0100" b
   val MC_BUS_WRITE_ADDRESS = "0001_1000" b
   val MC_BUS_WRITE_INSTRUCTION = "0010_1000" b
+  val MC_BUS_WRITE_PROGRAM_COUNTER = "0011_0000" b
 
-  // Schedule the instruction at the pointer to be read
+  // Schedule the instruction at the pointer to be read from memory
   val setMemPc = MC_BUS_READ_PROGRAM_COUNTER | MC_BUS_WRITE_ADDRESS
   // Fetch the read instruction from the memory
   val readInst = MC_BUS_READ_MEMORY | MC_BUS_WRITE_INSTRUCTION
 
   // Instruction microcode lists
+  // All instructions end with fetching a next instruction, which resets the micro-step counter
   val instructions = Seq(
     // 0x0: NOP, no-op
     Seq(setMemPc, readInst),
@@ -41,7 +42,12 @@ case class ExecutionCtrl() extends Component {
     // 0x5: SUB, reg0 = reg0 - reg1
     Seq(setMemPc, readInst),
     // 0x6: JMP, jump the program counter to a given location
-    Seq(setMemPc, readInst),
+    Seq(
+      setMemPc,
+      MC_BUS_READ_MEMORY | MC_BUS_WRITE_PROGRAM_COUNTER,
+      setMemPc,
+      readInst
+    ),
     // 0x7: OUT, set the output register
     Seq(setMemPc, readInst)
   )
@@ -102,6 +108,7 @@ case class ExecutionCtrl() extends Component {
     is(3)(io.outSignals.writeAddressRegister := True)
     is(4)(io.outSignals.writeMemory := True)
     is(5)(writeInstruction := True)
+    is(6)(programCounter := io.inBus.asUInt)
   }
 
   io.outSignals.aluMode := signalBits(6)
