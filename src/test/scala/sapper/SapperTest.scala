@@ -54,11 +54,10 @@ class SapperTest extends AnyFunSuite {
   }
 
   test("Registers") {
-    compiled.doSim { dut =>
+    compiled.doSim("registers") { dut =>
       waitInitialize(dut)
       val r = new Random(1234)
 
-      // Copy program
       val code =
         """LOAD 3
           |STORE 5
@@ -154,6 +153,7 @@ class SapperTest extends AnyFunSuite {
     println(s"Assembing and uploading to 0x${startAddress.toHexString}")
     println(code)
 
+    // TODO: This map should contain named addresses
     val addresses = Map[String, Int]()
     var address = startAddress
 
