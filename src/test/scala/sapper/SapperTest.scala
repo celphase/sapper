@@ -4,8 +4,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import spinal.core._
 import spinal.core.sim._
 
+import scala.collection.JavaConverters._
 import scala.language.postfixOps
 import scala.util.Random
+import scala.util.control.Breaks.{break, breakable}
 
 class SapperTest extends AnyFunSuite {
   // Code for testing
@@ -56,25 +58,15 @@ class SapperTest extends AnyFunSuite {
       waitInitialize(dut)
       val r = new Random(1234)
 
-      // LOAD 3
-      writeToAddress(dut, 7, 1)
-      writeToAddress(dut, 8, 3)
-
-      // STORE 5
-      writeToAddress(dut, 9, 2)
-      writeToAddress(dut, 10, 5)
-
-      // LOAD 4
-      writeToAddress(dut, 11, 1)
-      writeToAddress(dut, 12, 4)
-
-      // STORE 6
-      writeToAddress(dut, 13, 2)
-      writeToAddress(dut, 14, 6)
-
-      // JMP 0 (loop)
-      writeToAddress(dut, 15, 6)
-      writeToAddress(dut, 16, 0)
+      // Copy program
+      val code =
+        """LOAD 3
+          |STORE 5
+          |LOAD 4
+          |STORE 6
+          |JMP 0
+          |""".stripMargin
+      assemble(dut, 7, code)
 
       for (_ <- 1 to 10) {
         val value0 = r.nextInt(256)
@@ -157,6 +149,54 @@ class SapperTest extends AnyFunSuite {
       }
     }
   }*/
+
+  def assemble(dut: Sapper, startAddress: Int, code: String): Map[String, Int] = {
+    println(s"Assembing and uploading to 0x${startAddress.toHexString}")
+    println(code)
+
+    val addresses = Map[String, Int]()
+    var address = startAddress
+
+    val lines = code.lines().iterator().asScala
+    for(rawLine <- lines) {
+      breakable {
+        val line = rawLine.trim()
+
+        if (line.startsWith("//")) {
+          break
+        }
+
+        val parts = line.split(" +")
+
+        if (parts.isEmpty) {
+          break
+        }
+
+        val opcode = parts(0).toUpperCase() match {
+          case "NOP" => 0
+          case "LOAD" => 1
+          case "STORE" => 2
+          case "MOV" => 3
+          case "ADD" => 4
+          case "SUB" => 5
+          case "JMP" => 6
+          case "OUT" => 7
+          case _ => 0
+        }
+
+        writeToAddress(dut, address, opcode)
+        address += 1
+
+        for (part <- parts.drop(1)) {
+          val oprand = part.toInt
+          writeToAddress(dut, address, oprand)
+          address += 1
+        }
+      }
+    }
+
+    addresses
+  }
 
   val baudPeriod = 100000000 / 115200
 
