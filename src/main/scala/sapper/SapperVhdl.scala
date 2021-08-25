@@ -15,13 +15,12 @@ object SapperVhdl {
       6, 0
     ).padTo(256, 0.toByte)
 
-    val sapper = Sapper(simulation = false, initMemory = memory)
     SpinalConfig(
       device = Device.XILINX,
       defaultConfigForClockDomains = ClockDomainConfig(resetKind = BOOT),
       defaultClockDomainFrequency = FixedFrequency(100 MHz)
     )
-      .generateVhdl(InOutWrapper(sapper))
+      .generateVhdl(InOutWrapper(Sapper(simulation = false, initMemory = memory)))
       .printPruned()
   }
 }
