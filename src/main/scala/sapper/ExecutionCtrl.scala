@@ -15,9 +15,12 @@ case class ExecutionCtrl() extends Component {
   // Microcode ROM
   // Instruction: reserved, alu mode, 3 bits bus store, 3 bits bus read
   // 8 slots of microcode per instruction (3 bit micro-step counter)
+  val MC_BUS_READ_REGISTER_0 = "0000_0000" b
   val MC_BUS_READ_MEMORY = "0000_0011" b
   val MC_BUS_READ_PROGRAM_COUNTER = "0000_0100" b
   val MC_BUS_WRITE_ADDRESS = "0001_1000" b
+  val MC_BUS_WRITE_REGISTER_0 = "0000_1000" b
+  val MC_BUS_WRITE_MEMORY = "0010_0000" b
   val MC_BUS_WRITE_INSTRUCTION = "0010_1000" b
   val MC_BUS_WRITE_PROGRAM_COUNTER = "0011_0000" b
 
@@ -32,9 +35,21 @@ case class ExecutionCtrl() extends Component {
     // 0x0: NOP, no-op
     Seq(setMemPc, readInst),
     // 0x1: LOAD, reg0 = mem[I]
-    Seq(setMemPc, readInst),
+    Seq(
+      setMemPc,
+      MC_BUS_READ_MEMORY | MC_BUS_WRITE_ADDRESS,
+      MC_BUS_READ_MEMORY | MC_BUS_WRITE_REGISTER_0,
+      setMemPc,
+      readInst
+    ),
     // 0x2: STORE, mem[I] = reg0
-    Seq(setMemPc, readInst),
+    Seq(
+      setMemPc,
+      MC_BUS_READ_MEMORY | MC_BUS_WRITE_ADDRESS,
+      MC_BUS_READ_REGISTER_0 | MC_BUS_WRITE_MEMORY,
+      setMemPc,
+      readInst
+    ),
     // 0x3: MOV, reg1 = reg0
     Seq(setMemPc, readInst),
     // 0x4: ADD, reg0 = reg0 + reg1

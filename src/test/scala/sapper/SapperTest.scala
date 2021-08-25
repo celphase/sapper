@@ -51,40 +51,58 @@ class SapperTest extends AnyFunSuite {
     }
   }
 
-  // TODO: These tests are disabled until programs can be executed
-  /*test("Registers") {
+  test("Registers") {
     compiled.doSim { dut =>
       waitInitialize(dut)
       val r = new Random(1234)
+
+      // LOAD 3
+      writeToAddress(dut, 7, 1)
+      writeToAddress(dut, 8, 3)
+
+      // STORE 5
+      writeToAddress(dut, 9, 2)
+      writeToAddress(dut, 10, 5)
+
+      // LOAD 4
+      writeToAddress(dut, 11, 1)
+      writeToAddress(dut, 12, 4)
+
+      // STORE 6
+      writeToAddress(dut, 13, 2)
+      writeToAddress(dut, 14, 6)
+
+      // JMP 0 (loop)
+      writeToAddress(dut, 15, 6)
+      writeToAddress(dut, 16, 0)
 
       for (_ <- 1 to 10) {
         val value0 = r.nextInt(256)
         val value1 = r.nextInt(256)
 
-        // Store value in register 0
-        dut.io.sw #= switches(value0, write0 = true)
-        dut.clockDomain.waitRisingEdge()
+        println(s"Moving $value0 and $value1")
 
-        // Store value in register 1
-        dut.io.sw #= switches(value1, write1 = true)
-        dut.clockDomain.waitRisingEdge()
+        // Store the values to be moved
+        writeToAddress(dut, 3, value0)
+        writeToAddress(dut, 4, value1)
+        // 2 intentionally left empty memory slots (5 and 6)
 
-        // Retrieve and check value in register 0
-        dut.io.sw #= switches(select = 1)
-        dut.clockDomain.waitRisingEdge()
-        var result = dut.io.led.toInt & 0xFF
-        assert(result == value0, s"Got $result expected $value0")
+        // Execute (set loop JMP target to start of program)
+        writeToAddress(dut, 2, 7)
+        // Wait unnecessary, the write address communication already takes up enough time
+        writeToAddress(dut, 2, 0)
 
-        // Retrieve and check value in register 1
-        dut.io.sw #= switches(select = 2)
-        dut.clockDomain.waitRisingEdge()
-        result = dut.io.led.toInt & 0xFF
-        assert(result == value1, s"Got $result expected $value1")
+        // Validate that the new memory addresses have been set correctly
+        val result0 = readFromAddress(dut, 5)
+        assert(result0 == value0)
+        val result1 = readFromAddress(dut, 6)
+        assert(result1 == value1)
       }
     }
   }
 
-  test("Addition") {
+  // TODO: These tests are disabled until programs can be executed
+  /*test("Addition") {
     compiled.doSim { dut =>
       waitInitialize(dut)
       val r = new Random(1234)
